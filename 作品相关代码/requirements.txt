@@ -1,0 +1,26 @@
+# lit-agent 依赖清单，Python 3.9 以上
+# 安装：pip install -r requirements.txt
+
+requests>=2.31      # 联网抓文献，OpenAlex / Crossref / arXiv / Semantic Scholar
+jieba>=0.42.1       # 中文分词，BM25 和指纹索引都要用
+PyMuPDF>=1.23       # PDF 抽文字，导入名是 pymupdf 或 fitz
+streamlit>=1.30     # 网页界面
+# 本地神经语义向量：多语 MiniLM ONNX 推理与 SentencePiece 分词
+numpy>=1.26
+onnxruntime>=1.20
+sentencepiece>=0.2
+
+# OpenCLI 运行时（非 pip 依赖，不要写入上面的 pip 安装段）：
+#   Node.js >= 20.18.1
+#   CLI：vendor/opencli-cli/node_modules/@jackwener/opencli（固定 2.0.3）
+#        项目会优先直接调用该目录，避免每次搜索经过 npx 冷启动
+#        重装：npm install --prefix vendor/opencli-cli --save-exact @jackwener/opencli@2.0.3
+#        也支持 npx -y @jackwener/opencli@2.0.3 或全局安装作为后备
+#   Browser Bridge：vendor/opencli-extension（版本 1.0.27）
+#   Browser Bridge 压缩包：vendor/opencli-extension-v1.0.27.zip
+#   压缩包 SHA-256：8636D42A0FE44D7BA3B0603DBCD9581E8269CCBCA950136D0DFC0FFC39A8A213
+# 浏览器需使用独立 profile 加载扩展；未安装时联网 API 和本地检索照常工作，
+# OpenCLI 浏览器补充源自动降级。
+
+# 可选，PyMuPDF 抽不出文字时用它兜底，不装也能跑
+# pdfminer.six>=20231228

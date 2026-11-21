@@ -1,0 +1,27 @@
+{
+  "benchmark_version": "large-v1",
+  "created_at": "2026-11-18",
+  "seed": 20261118,
+  "corpus_file": "corpus.jsonl",
+  "queries_file": "queries.jsonl",
+  "corpus_sha256": "0eae195f853b4489f2d3fd7fd5594fdb33d629c17ce014e8ea17704dc6a9c434",
+  "queries_sha256": "c084cf150d3fc0a19b441a568a61befc26041ed6230417679d4f78e1ddd3cd39",
+  "documents": 10000,
+  "topics": 50,
+  "queries": 1150,
+  "content_counts": {
+    "documents": 10000,
+    "fulltext": 1000,
+    "abstract": 7000,
+    "title_only": 2000
+  },
+  "query_types": {
+    "exact": 500,
+    "exact_whitespace": 250,
+    "hard_negative": 50,
+    "short_exact": 250,
+    "topic_search": 50,
+    "unrelated": 50
+  },
+  "frozen": true
+}

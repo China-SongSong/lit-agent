@@ -1,0 +1,16 @@
+{
+  "model_id": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "runtime_model": "paraphrase-multilingual-MiniLM-L12-v2-int8",
+  "license": "Apache-2.0",
+  "source": "https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "onnx_file": "model_quint8_avx2.onnx",
+  "onnx_sha256": "98a01d88b7de996cdea58c32ca71208c09968d143798814b2ea09d3439dc334f",
+  "tokenizer_file": "sentencepiece.bpe.model",
+  "tokenizer_sha256": "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865",
+  "tokenizer_config_file": "tokenizer.json",
+  "tokenizer_config_sha256": "2c3387be76557bd40970cec13153b3bbf80407865484b209e655e5e4729076b8",
+  "dimension": 384,
+  "pooling": "mean",
+  "normalization": "l2",
+  "max_length": 128
+}

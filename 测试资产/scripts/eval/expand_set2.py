@@ -1,0 +1,67 @@
+# -*- coding: utf-8 -*-
+import json, re, os
+FX = r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr\tests\fixtures"
+corpus = [json.loads(l) for l in open(os.path.join(FX,"calibration_corpus_v2.jsonl"), encoding="utf-8") if l.strip()]
+old = [json.loads(l) for l in open(os.path.join(FX,"calibration_queries_v2.jsonl"), encoding="utf-8") if l.strip()]
+
+def sents(t):
+    parts = re.split(r"(?<=[。！？])|(?<=[.!?])\s+", t)
+    return [p.strip() for p in parts if len(p.strip()) >= 30]
+
+new = []
+def add(qid, query, qtype, should, docs, lang, note=""):
+    new.append(dict(id=qid, query=query, query_type=qtype, split="test",
+                    should_find=should, expected_doc_ids=docs, language=lang,
+                    **({"note":note} if note else {})))
+
+for d in corpus:
+    did = d["id"]; ft = (d.get("fulltext") or "").strip(); lang = d.get("language","zh")
+    tag = did.split(":")[-1]
+    if len(ft) < 100:
+        # 仅题录/摘要：语料在标题或摘要上建了片段，标题检索应当命中
+        add("add-%s-title" % tag, d["title"], "title_record", True, [did], lang,
+            "题录级文献，标题与摘要构成片段")
+        continue
+    ss = sents(ft)
+    if not ss: continue
+    add("add-%s-exact" % tag, ss[0], "exact", True, [did], lang)
+    add("add-%s-tail" % tag, ss[-1][-60:], "tail", True, [did], lang)
+    if len(ss[0]) > 45:
+        add("add-%s-short" % tag, ss[0][:40], "short", True, [did], lang)
+    if len(ss) > 1:
+        v = ss[1].replace("。", ",").replace(".", ",").strip()
+        add("add-%s-punct" % tag, v, "punctuation", True, [did], lang)
+        # 连续的跨句片段（原文相邻两句）
+        add("add-%s-span" % tag, (ss[0] + ss[1])[:120], "span", True, [did], lang)
+
+hard = [
+ ("add-hard-gnn", "在图神经网络推荐中，冷启动用户往往交互极少，本文用元学习初始化来提升低资源场景的表现。", "zh"),
+ ("add-hard-citation", "引文溯源需要把原文证据与语义相似分开处理，外部结果在入库前都只是待核对候选。", "zh"),
+ ("add-hard-biblio", "文献计量网络的中心性会随统计窗口变化，因此比较不同研究时必须先对齐窗口口径。", "zh"),
+ ("add-hard-semantic", "Semantic similarity can surface related passages, yet it cannot establish where a sentence originally came from.", "en"),
+]
+for qid, q, lang in hard:
+    add(qid, q, "hard_negative", False, [], lang, "同主题改写，无逐字证据")
+
+outer = [
+ ("add-neg-quantum", "量子纠缠态在超导约瑟夫森结中的退相干时间测量方法研究", "zh"),
+ ("add-neg-crispr", "CRISPR base editing efficiency in primary human hematopoietic stem cells", "en"),
+ ("add-neg-transformer", "Transformer attention sparsity for long-context language model pretraining", "en"),
+ ("add-neg-metro", "地铁隧道盾构施工引起的地表沉降预测模型", "zh"),
+]
+for qid, q, lang in outer:
+    add(qid, q, "negative", False, [], lang, "库外无关文本")
+
+# 校验正样本：查询前缀应出现在该文献全文或标题中
+ftmap = {d["id"]: ((d.get("fulltext") or "") + " " + (d.get("title") or "")) for d in corpus}
+bad = [c["id"] for c in new if c["should_find"] and c["query"][:30] not in ftmap.get(c["expected_doc_ids"][0], "")]
+print("新增 %d 条，正样本校验未通过 %d %s" % (len(new), len(bad), bad[:5]))
+
+out = old + new
+dst = os.path.join(FX, "calibration_queries_v3.jsonl")
+with open(dst, "w", encoding="utf-8") as f:
+    for c in out: f.write(json.dumps(c, ensure_ascii=False) + "\n")
+from collections import Counter
+print("写出 %d 条（旧 %d + 新 %d）" % (len(out), len(old), len(new)))
+print("类型:", dict(Counter(c["query_type"] for c in out)))
+print("正负:", dict(Counter(c["should_find"] for c in out)))

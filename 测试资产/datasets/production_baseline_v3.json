@@ -1,0 +1,25 @@
+{
+  "corpus_version": "production-v3",
+  "supersedes": "production_baseline_v2.json",
+  "database": "data/index.db",
+  "logical_sha256": "968f1d04d9d39a2bc8784b73161dad2e107d57435ea4f52178f6a478167c5001",
+  "physical_sha256_observed": "33b5e1fc9876ca9927544ea3c050d4b9d54e61d81f55b8271b4dea50a4028a68",
+  "hash_policy": "语义语料哈希 v3：仅覆盖 documents 的语义字段与 documents_fulltext。排除抽取/清洗/总结时间、PDF 路径、分块和倒排索引、总结、缓存、元数据及学科标签。",
+  "table_sha256": {
+    "documents": "66dee4d1325a70af873fb583046ed1969a1067b422310b2cc4e4827bb28e03e0",
+    "documents_fulltext": "9d89d09b3b5cee1c7f14f9255125ad11f1e97b3b246fd07b647fd2f2f0e9ec85"
+  },
+  "queries": "production_queries_v1.jsonl",
+  "queries_sha256": "5bf8abc560af18f257325b93bc872c9ef88ee288339554e5b04194a9c7abfd4c",
+  "query_count": 9,
+  "frozen_on": "2026-11-18",
+  "counts": {
+    "documents": 49,
+    "documents_with_fulltext": 8,
+    "chunks": 254,
+    "postings": 21710,
+    "fingerprints": 47834,
+    "summaries": 8
+  },
+  "note": "v1 和 v2 保留为历史口径；后续语料变化必须生成新版本，不能覆盖本基线。"
+}

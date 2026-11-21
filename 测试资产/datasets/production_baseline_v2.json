@@ -1,0 +1,29 @@
+{
+  "corpus_version": "production-v2",
+  "supersedes": "production_baseline_v1.json",
+  "database": "data/index.db",
+  "logical_sha256": "e569bef69ccce3155cc8f39ff4e27054b1760746213182f41fe176081fd42a17",
+  "physical_sha256_observed": "41a266dc6ebb61a23099f5b45ce23c3359dbf8fb610779e836851de188171024",
+  "hash_policy": "书目表逻辑哈希 v2：只覆盖 documents、chunks、chunk_text、documents_fulltext、postings、fingerprints；排除 summaries、llm_cache、ingest_log 和 meta。",
+  "table_sha256": {
+    "documents": "c30e1f499b05620ecaa8e01116d3d4054dc64fb66d4cfcc41e93f29638904196",
+    "chunks": "997411b907a08659486cc69815f579317ee1ea28b5b354faf0eae4a73dda3074",
+    "chunk_text": "8c53fbd93c32b60547fcde7aff8b1c5cc671861e0ecca57a74802fd676519467",
+    "documents_fulltext": "9d89d09b3b5cee1c7f14f9255125ad11f1e97b3b246fd07b647fd2f2f0e9ec85",
+    "postings": "c0dbce5e139cc1438a15b0c900dac739ffad397439d104f6b3e946a29283ada9",
+    "fingerprints": "2590b79df2d8ecd0c7abd8fdc668fe46201a1c9f6e38faba39efe6998469f691"
+  },
+  "queries": "production_queries_v1.jsonl",
+  "queries_sha256": "5bf8abc560af18f257325b93bc872c9ef88ee288339554e5b04194a9c7abfd4c",
+  "query_count": 9,
+  "frozen_on": "2026-11-18",
+  "counts": {
+    "documents": 49,
+    "documents_with_fulltext": 8,
+    "chunks": 254,
+    "postings": 21710,
+    "fingerprints": 47834,
+    "summaries": 8
+  },
+  "note": "production_baseline_v1.json 保留为旧全库哈希口径的历史记录；后续语料变化必须生成新版本，不能覆盖本基线。"
+}

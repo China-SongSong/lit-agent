@@ -1,0 +1,20 @@
+{
+  "corpus_version": "evaluation-v2",
+  "created_on": "2026-11-01",
+  "documents_file": "calibration_corpus_v2.jsonl",
+  "queries_file": "calibration_queries_v2.jsonl",
+  "document_count": 8,
+  "query_count": 14,
+  "purpose": "隔离的离线评测语料，用于验证契约、移除 BM25 固定加成以及后续语义检索增益。",
+  "coverage": [
+    "中文全文",
+    "英文全文",
+    "摘要级文献",
+    "仅标题文献",
+    "同主题不同结论",
+    "同义改写的非确认样本",
+    "多文献综合概述",
+    "库外相似文本"
+  ],
+  "leakage_policy": "split=calibration 用于选择策略；split=test 只用于验收，不参与阈值选择。"
+}

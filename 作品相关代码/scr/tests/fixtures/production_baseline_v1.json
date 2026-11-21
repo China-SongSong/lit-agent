@@ -1,0 +1,19 @@
+{
+  "corpus_version": "production-v1",
+  "database": "data/index.db",
+  "logical_sha256": "271aac471f16f3d010884a673823bbf835bca020b0b31f79381d5e4e5d3355ba",
+  "physical_sha256_observed": "b395689b5331de152393c7110b6ab5a6e320a3d9334723225f82961d4739104b",
+  "hash_policy": "使用逻辑哈希判断语料变化；物理哈希只记录观察值，WAL 合并可能改变文件字节。",
+  "queries": "production_queries_v1.jsonl",
+  "query_count": 9,
+  "frozen_on": "2026-11-01",
+  "counts": {
+    "documents": 49,
+    "documents_with_fulltext": 8,
+    "chunks": 254,
+    "postings": 21710,
+    "fingerprints": 47834,
+    "summaries": 8
+  },
+  "note": "生产语料只读基线。后续召回、阈值或向量实验不得未经版本记录直接覆盖该基线。"
+}
