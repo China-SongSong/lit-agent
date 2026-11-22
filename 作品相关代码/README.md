@@ -197,6 +197,7 @@ OpenCLI 只作为外部候选，不参与本地 `found` 判定。
 ```
 lit_agent/                        作品总目录
 ├─ .gitignore                      Git 上传排除规则
+├─ CHANGELOG.md                    按日期记录的功能、变更与修复
 ├─ .env                           配置，放密钥和联系邮箱
 ├─ .env.example                   配置模板
 ├─ 测试资产/                      分层测试脚本、固定样例与测试说明

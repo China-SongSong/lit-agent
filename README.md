@@ -51,6 +51,7 @@ pip install -r 作品相关代码/requirements.txt
 
 ## 完整文档
 
+- [更新日志](CHANGELOG.md)
 - [项目完整说明](作品相关代码/README.md)
 - [一键运行说明](作品相关代码/一键运行说明.txt)
 - [测试与固定基线说明](作品相关代码/scr/tests/README.md)
