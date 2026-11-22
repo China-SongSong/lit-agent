@@ -62,7 +62,7 @@ echo [1/5] Python check ... OK
 %PY% -V
 
 rem ---------- step 2: dependencies ----------
-%PY% -c "import requests, jieba, fitz, streamlit" >nul 2>nul
+%PY% -c "import requests, jieba, fitz, streamlit, numpy, onnxruntime, sentencepiece" >nul 2>nul
 if not errorlevel 1 goto :deps_ok
 if not defined REQ goto :deps_noreq
 echo [2/5] Missing packages, installing from:
@@ -80,7 +80,7 @@ goto :fail
 :deps_noreq
 echo [ERROR] Packages are missing and requirements.txt was not found.
 echo         Install them manually:
-echo           %PY% -m pip install requests jieba PyMuPDF streamlit
+echo           %PY% -m pip install requests jieba PyMuPDF streamlit numpy onnxruntime sentencepiece
 goto :fail
 
 :deps_ok
@@ -94,9 +94,9 @@ if errorlevel 1 (
     goto :fail
 )
 
-rem ---------- step 4: build the two indexes (incremental) ----------
+rem ---------- step 4: build lexical, fingerprint, and vector indexes (incremental) ----------
 echo.
-echo [4/5] Building index: BM25 + n-gram fingerprints
+echo [4/5] Building indexes: BM25 + n-gram fingerprints + neural vectors
 echo       Incremental: already indexed documents are skipped.
 %PY% cli.py index
 if errorlevel 1 (

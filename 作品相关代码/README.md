@@ -1,9 +1,9 @@
 # lit-agent 文献引文溯源系统
 
 输入一段话，找出它出自本地语料库里的哪篇文献的哪一段，并给出 GB/T 7714-2015 格式的引用。
-另外还有文献检索、结构化总结和对话三项能力。
+另外还有文献检索、神经语义召回、结构化总结、对话、学科标签和查询历史。
 
-除抓取文献和调用大模型之外，其余步骤都能在本机离线完成。
+除抓取文献、联网补充候选和调用大模型之外，其余步骤都能在本机离线完成。
 
 ## 怎么跑起来
 
@@ -33,22 +33,25 @@
 
 ```powershell
 python -B -m unittest discover -s tests -v
-python -B -m litagent.evaluation.calibration --corpus tests/fixtures/calibration_corpus_v2.jsonl --queries tests/fixtures/calibration_queries_v2.jsonl
+python -B -m litagent.evaluation.calibration --corpus tests/fixtures/calibration_corpus_v2.jsonl --queries tests/fixtures/calibration_queries_v3.jsonl
 ```
 
 BM25 只作为诊断旁证记录，不再向置信度增加固定分数。`found=true` 必须由
-本地精确指纹证据产生；没有显式联网许可时，溯源链路不得发起任何外部请求。
+本地精确指纹证据产生；向量候选只提供 `local_semantic` 召回，不能单独确认出处。
+没有显式联网许可时，溯源链路不得发起任何外部请求。
 
 ## 运行环境
 
 Windows 10 / 11，Python 3.9 及以上（开发时用的是 3.14.7）。
-需要四个包：requests、jieba、PyMuPDF、streamlit，都写在 `requirements.txt` 里。
+需要 requests、jieba、PyMuPDF、streamlit、numpy、onnxruntime 和 sentencepiece，
+完整清单在 `requirements.txt` 里。
 
 ```
 pip install -r requirements.txt
 ```
 
-普通笔记本就能跑，不用显卡，也不用另外装数据库。
+普通笔记本就能跑，不用显卡，也不用另外装数据库。从 GitHub 克隆后需确保
+Git LFS 已下载 `data/models` 下的 ONNX 模型；仓库中的模型文件由 Git LFS 管理。
 
 ## 要不要填密钥
 
@@ -92,6 +95,9 @@ LIT_VECTOR_MIN_SCORE=0.12
 LIT_VECTOR_TRIGGER_RATIO=0.85
 ```
 
+向量模型使用 SentencePiece 分词、ONNX `last_hidden_state` 均值池化和 L2
+归一化。模型来源、许可证、文件名和 SHA-256 记录在同目录的 `model_manifest.json`。
+
 ## 语料库里有什么
 
 `data` 目录里带了一份可以直接演示的语料：
@@ -104,8 +110,9 @@ LIT_VECTOR_TRIGGER_RATIO=0.85
 第一次运行不会重新下载这些内容。建索引是增量的，已经建好的文献会自动跳过，
 所以第二次运行通常只要几秒。
 
-想从零开始的话，把整个 `data` 目录删掉，再双击 `一键运行.bat`，会重建一个空库，
-之后用 `python cli.py fetch` 重新抓文献。
+想重建演示库时，删除 `data/index.db*`、`cache`、`clean`、`pdfs`、`raw` 和
+`summaries`，但保留 `data/models` 与需要复现的 `data/evaluation`。之后双击
+`一键运行.bat` 会重建空库，再用 `python cli.py fetch` 重新抓文献。
 
 ## 溯源结果怎么看
 
@@ -116,8 +123,10 @@ LIT_VECTOR_TRIGGER_RATIO=0.85
 3. 勾“本地找不到时联网”之后返回的那些候选不算出处。它们是“可能相关”的线索，
    界面上会标明本地库未收录，需要自己核实。实际用下来经常是几条相关、几条不太相关。
 4. 每条结论都带诊断信息：词元数、指纹窗口、候选数量、有没有 BM25 旁证、
-   有没有跨片段拼接、有没有联网、花了多少时间，判断依据都在里面。
+   有没有向量候选、有没有跨片段拼接、有没有联网、花了多少时间，判断依据都在里面。
 5. 引用之前还是要人工核对一遍原文，这是学术规范的要求。
+6. 只有向量召回时显示“语义相关文献（非原文证据）”，给出语义相似度而不是
+   原文置信度；这类结果不能直接当作出处。
 
 ## 联网兜底
 
@@ -128,9 +137,9 @@ Semantic Scholar；中文查询查 OpenAlex、Crossref 以及中文浏览器来�
 OpenCLI 是内置的二级联网补充通道：中文查询同时路由到 CNKI、万方和百度学术，
 其中 CNKI/万方使用题录关键词，百度学术使用精确短语；英文查询使用 Google Scholar。
 结果会按查询语种过滤，外文候选不会挤占中文主列表。它不会在离线检索中启动。
-浏览器桥不可用、验证码、
-登录过期或超时只会记录为补充通道错误，不会阻断四个结构化 API。OpenCLI 候选
-始终排在 API 候选之后，并且只作为外部候选，不参与本地 `found` 判定。
+浏览器桥不可用、验证码、登录过期或超时只会记录为补充通道错误，不会阻断 API。
+候选先通过语种和最低相关度门槛，再按 API 优先、OpenCLI 补充的层级展示；
+OpenCLI 只作为外部候选，不参与本地 `found` 判定。
 
 有几点要注意：
 
@@ -159,6 +168,10 @@ OpenCLI 是内置的二级联网补充通道：中文查询同时路由到 CNKI�
 网页新增“查询历史”页签，持久保存 Agent 对话和溯源查询，可查看当时的候选、
 打开候选链接、把历史查询载入溯源页，或删除单条/清空历史记录。
 
+文献库中的标签来自标题、关键词、摘要和出版物，一篇文献可同时拥有多个学科标签。
+当前词典包含新闻传播、社会学、历史、文学、哲学、法学、经济、管理、教育、心理、
+政治、图情、计算机、数学、物理、化学、生物、医学、环境、工程和艺术等类别。
+
 - 对已有总结执行 `--redo` 会绕过旧缓存重新生成，适合修复历史上字段不完整的总结；
   新旧结果按字段覆盖度合并，字段更少的重生成结果不会清空原有字段。
 
@@ -173,36 +186,43 @@ OpenCLI 是内置的二级联网补充通道：中文查询同时路由到 CNKI�
   `python cli.py fetch -q "图神经网络 推荐系统" --limit 20` 抓一些回来。
 - 溯源说没找到：这段话的文献不在库里，属于正常现象，可以勾联网看看有没有线索。
 - 对话报错：没填 `LIT_LLM_API_KEY`，不影响溯源和检索。
+- 神经向量初始化失败：确认 Git LFS 文件已下载，并执行 `python cli.py index` 重建向量。
+- OpenCLI 提示 `CNKI_AUTH_REQUIRED`：在专用浏览器中完成知网滑块或登录后重试。
 - 想确认环境：`一键运行.bat check`，或者 `python cli.py doctor`。
 
 ## 目录结构
 
 ```
 lit_agent/                        作品总目录
-├─ lit-agent 作品设计报告.docx     设计报告
-├─ 演示视频.mp4
-├─ 参赛报名表.xlsx
+├─ .gitignore                      Git 上传排除规则
 ├─ .env                           配置，放密钥和联系邮箱
 ├─ .env.example                   配置模板
+├─ 测试资产/                      分层测试脚本、固定样例与测试说明
 └─ 作品相关代码/
    ├─ README.md                   本文件
    ├─ 一键运行.bat                一键运行，推荐入口
    ├─ 一键运行说明.txt            一键运行的中文分步说明
    ├─ 启动网页.bat                只启动网页的旧入口
+   ├─ 启动OpenCLI浏览器.bat      启动带 Browser Bridge 的专用浏览器
+   ├─ 安装OpenCLI知网修复.bat    安装项目内 CNKI 适配器覆盖
    ├─ requirements.txt            依赖清单
+   ├─ vendor/                     Browser Bridge 扩展和 OpenCLI CLI/适配器
    └─ scr/                        程序代码
       ├─ cli.py                   命令行入口
       ├─ app.py                   网页界面
       ├─ litagent/                主体包
       │  ├─ fetch/                阶段 1：在线抓取与本地 PDF 导入
       │  ├─ clean/                阶段 2：正文抽取、分块、去重
-      │  ├─ index/                阶段 3：存储、BM25、n-gram 指纹、RRF 融合
+      │  ├─ index/                阶段 3：存储、BM25、指纹、向量与融合
       │  ├─ retrieve/             阶段 4：混合检索与引文溯源
       │  ├─ summarize/            结构化总结
       │  ├─ agent/                对话式 Agent
       │  ├─ cite/                 引用格式
       │  └─ llm/                  大模型客户端
-      └─ data/                    预置演示语料
+      └─ data/
+         ├─ models/               本地 ONNX 神经向量模型
+         ├─ evaluation/           固定测评集与校准结果
+         └─ index.db              本地运行索引
 ```
 
 两个启动脚本会自己去找 `cli.py` 所在的目录，代码放在 `scr` 子目录里可以，
@@ -226,6 +246,21 @@ python cli.py stats                   语料统计
 python cli.py ui                      启动网页界面
 ```
 
+## 已修复的边界问题
+
+- 分块上限为零或负数时不再死循环，配置层和分块函数都有下限保护。
+- 数值配置增加有限值和上下界校验，错误值回退默认；直接构造配置对象也受约束。
+- 短查询末词被截断时，先用完整词元前缀缩小候选集，再做逐词元对齐。
+- 语料基线升级为 v3 语义哈希，只覆盖书目语义字段和正文，不受总结时间、
+  缓存、元数据或学科标签变化影响。
+- 空输入返回独立等级 `empty`；删除文献会清理正文、片段、倒排、指纹、总结、
+  全文和标签。
+- 总结重生成按字段覆盖度合并，低覆盖度结果不会清空原有非空字段。
+- 作者名进入引文前会去除 HTML 标签和实体；方向控制符、零宽字符不会再污染正文。
+- RIS 使用 `T1` 和 `Y1` 主字段；HTTP 错误对象提供 `retryable` 标记。
+- 含假名的文本判为日文；arXiv `journal_ref` 支持年份后接页码的写法。
+- 学科词典已覆盖电池储能、网络爬虫和数据引用；当前生产库综合类为 0。
+
 ## 已知问题
 
 - 语料少的时候漏报会明显变多。
@@ -234,4 +269,9 @@ python cli.py ui                      启动网页界面
 - 扫描版 PDF 抽不出文字时只剩题录。PyMuPDF 抽不出来会再试一次 pdfminer.six，
   这个包可选安装。
 - Semantic Scholar 和 arXiv 受对方限流影响，联网时偶尔个别库没有结果。
+- 20,000 片段时混合检索 P95 已超过 1 秒；更大规模需要分片、预筛或 ANN，
+  当前交互场景建议控制在一万片段以内。
+- CNKI 页面可能要求登录、滑块或机构验证；系统不会绕过验证。
+- 题录级或短正文文献无法可靠生成方法、发现、贡献、局限等结构化字段，
+  界面会标注输入限制，不建议反复重生成。
 - 系统只给判断依据和置信度，不作学术结论，引用前请自行核对原文。

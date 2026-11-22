@@ -13,7 +13,7 @@
 ## 评测集
 
 `fixtures/calibration_corpus_v2.jsonl` 和
-`fixtures/calibration_queries_v2.jsonl` 是隔离的合成评测集，覆盖：
+`fixtures/calibration_queries_v3.jsonl` 是隔离的合成评测集，覆盖：
 
 - 中英文全文、摘要和仅标题；
 - 逐字原文、标点变化、短句和部分命中；
@@ -36,7 +36,7 @@ python -B -m unittest discover -s tests -v
 ```powershell
 python -B -m litagent.evaluation.calibration `
   --corpus tests/fixtures/calibration_corpus_v2.jsonl `
-  --queries tests/fixtures/calibration_queries_v2.jsonl `
+  --queries tests/fixtures/calibration_queries_v3.jsonl `
   --format markdown
 ```
 
@@ -46,6 +46,19 @@ python -B -m litagent.evaluation.calibration `
 
 当前评测集的校准结论写入 `data/evaluation/`。它只是 Phase 0 的合成基线，
 不能替代真实论文和真实用户查询上的最终验收。
+
+## 向量召回
+
+`data/models/paraphrase-multilingual-MiniLM-L12-v2` 保存量化 ONNX 多语
+MiniLM 模型、SentencePiece 分词文件和模型清单。模型由 Git LFS 管理，测试前
+应确认文件不是 LFS 指针，并执行：
+
+```powershell
+python -B cli.py index
+```
+
+向量只在精确指纹未命中或覆盖率低于触发线时启动；测试覆盖模型编码归一化、
+同义与跨语言语义区分、全量片段向量写入，以及“只有向量命中不能设置 found”。
 
 ## 真实语料副本
 
