@@ -877,7 +877,7 @@ def build_parser()->argparse.ArgumentParser:
     p.add_argument("--file",help="从文件读取要溯源的文本")
     p.add_argument("--no-online",action="store_true",help="本地未命中时不联网")
     p.add_argument("--source-hint",default="",
-                   help="知网链接、DOI 或其他来源提示，用于优先解析题录")
+                   help="CNKI 链接、DOI 或其他来源提示，用于优先解析题录")
     p.add_argument("--top-k",type=int,default=5,help="返回候选数")
     p.add_argument("--json",action="store_true",help="额外输出 JSON")
     p.set_defaults(func=cmd_trace)

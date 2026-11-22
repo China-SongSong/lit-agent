@@ -156,7 +156,7 @@ OpenCLI 只作为外部候选，不参与本地 `found` 判定。
   首次使用中文站点时运行 `启动OpenCLI浏览器.bat`，在专用窗口中手动登录或完成
   安全验证，并保持窗口开启。交互式 CNKI 查询默认最多等待 35 秒。项目使用
   `kns.cnki.net/kns8s` 国内入口；安装或重新安装本地适配器时运行
-  `安装OpenCLI知网修复.bat`。遇到滑块验证会明确提示 `CNKI_AUTH_REQUIRED`。
+  `安装OpenCLI学术站点修复.bat`。遇到滑块验证会明确提示 `CNKI_AUTH_REQUIRED`。
 
 溯源页可选填 DOI 或包含 DOI 的来源链接；联网候选卡片提供“打开原文 / 来源页”
 按钮。没有可直接访问 URL 时，会用 DOI 生成 `https://doi.org/<DOI>` 跳转链接。
@@ -187,7 +187,7 @@ OpenCLI 只作为外部候选，不参与本地 `found` 判定。
 - 溯源说没找到：这段话的文献不在库里，属于正常现象，可以勾联网看看有没有线索。
 - 对话报错：没填 `LIT_LLM_API_KEY`，不影响溯源和检索。
 - 神经向量初始化失败：确认 Git LFS 文件已下载，并执行 `python cli.py index` 重建向量。
-- OpenCLI 提示 `CNKI_AUTH_REQUIRED`：在专用浏览器中完成知网滑块或登录后重试。
+- OpenCLI 提示 `CNKI_AUTH_REQUIRED`：在专用浏览器中完成站点滑块或登录后重试。
 - 想确认环境：`一键运行.bat check`，或者 `python cli.py doctor`。
 
 ## 目录结构
@@ -204,7 +204,7 @@ lit_agent/                        作品总目录
    ├─ 一键运行说明.txt            一键运行的中文分步说明
    ├─ 启动网页.bat                只启动网页的旧入口
    ├─ 启动OpenCLI浏览器.bat      启动带 Browser Bridge 的专用浏览器
-   ├─ 安装OpenCLI知网修复.bat    安装项目内 CNKI 适配器覆盖
+   ├─ 安装OpenCLI学术站点修复.bat 安装项目内 CNKI 适配器覆盖
    ├─ requirements.txt            依赖清单
    ├─ vendor/                     Browser Bridge 扩展和 OpenCLI CLI/适配器
    └─ scr/                        程序代码

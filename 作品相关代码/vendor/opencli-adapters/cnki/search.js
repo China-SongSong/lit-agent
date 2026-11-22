@@ -16,7 +16,7 @@ cli({
     site: 'cnki',
     name: 'search',
     access: 'read',
-    description: '中国知网论文搜索（国内 KNS8S）',
+    description: 'CNKI 论文搜索（国内 KNS8S）',
     domain: 'kns.cnki.net',
     strategy: Strategy.COOKIE,
     args: [
@@ -41,7 +41,7 @@ cli({
     `);
         if (state?.verification) {
             throw new Error(
-                'CNKI_AUTH_REQUIRED: 知网要求完成安全验证，请在专用 OpenCLI 浏览器中处理后再重试'
+                'CNKI_AUTH_REQUIRED: 站点要求完成安全验证，请在专用 OpenCLI 浏览器中处理后再重试'
             );
         }
 

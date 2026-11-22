@@ -177,7 +177,7 @@ class LocalPdfSource(Source):
                 if not candidate.is_file():  #只要文件，目录本身不收；注意这里没有文件大小上限，超大文件也会被读进来。
                     continue  #不是文件就跳过，继续看下一个条目。
                 if candidate.suffix.lower() not in wanted:  #后缀不在受支持集合里的直接不要。
-                    continue  #跳过不支持的类型，比如知网的 caj 和 wps。
+                    continue  #跳过不支持的类型，比如 CNKI 的 caj 和 wps。
                 if any(part.lower() in SKIP_DIR_NAMES for part in candidate.parts):  #路径里任意一段命中跳过清单就整条丢掉，依赖和备份目录因此被排除。
                     continue  #跳过这些目录里的文件，免得把依赖目录中的东西收进语料库。
                 if candidate.name.startswith("~$"):  #Word 打开文档时会生成以波浪号加美元符开头的临时文件，必须跳过。

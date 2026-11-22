@@ -153,7 +153,7 @@ try:
 except Exception as e:
     c.add("25.1", "parse_cli_payload 抗噪音", False, "%s" % type(e).__name__)
 try:
-    row = {"title":"知网文献","author":"张三","year":"2024","source":"CNKI"}
+    row = {"title":"CNKI文献","author":"张三","year":"2024","source":"CNKI"}
     d = row_to_document(row, "cnki")
     c.add("25.2", "row_to_document 单行格式", d is None or hasattr(d,"title"), getattr(d,"title",None))
 except Exception as e:

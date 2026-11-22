@@ -295,7 +295,7 @@ def tab_trace()->None:
         "DOI / 含 DOI 的来源链接（选填）",
         placeholder="例如 10.1360/tb-2024-0376 或 https://doi.org/...",
         key="trace_source_hint",
-        help="系统会优先按 DOI 解析题录；普通知网文章页仍用正文执行联网检索。",
+        help="系统会优先按 DOI 解析题录；普通 CNKI 文章页仍用正文执行联网检索。",
     )
 
     col1,col2,col3=st.columns([1,1,2])

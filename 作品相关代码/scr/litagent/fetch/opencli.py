@@ -145,7 +145,7 @@ def _venue_type(value:Any)->str:
 
 
 def chinese_metadata_query(query:str,*,limit:int=6)->str:
-    """把中文正文压成适合知网/万方的题录关键词。"""
+    """把中文正文压成适合 CNKI/万方的题录关键词。"""
     tokens=tokenize(query or "")
     ordered:List[str]=[]
     for token in tokens:
