@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import re
+import logging
 import time
 from concurrent.futures import ThreadPoolExecutor,wait
 from dataclasses import dataclass
 from typing import Any,Dict,List,Optional,Tuple
+from urllib.parse import parse_qs,urlparse
 
 from litagent.config import Settings,settings as default_settings
 from litagent.contracts import(
@@ -25,6 +27,9 @@ from litagent.index.vector import (
     get_embedding_encoder,
 )
 from litagent.schema import Document,SearchHit,TraceResult,has_cjk,normalize_doi
+
+_LOG=logging.getLogger(__name__)
+_DOI_IN_TEXT_RE=re.compile(r"10\.\d{4,9}/[-._;()/:A-Z0-9]+",re.IGNORECASE)
 
 CONFIDENCE_EXACT=0.85  #指纹对齐到这个比例
 CONFIDENCE_FUZZY=0.45
@@ -68,6 +73,55 @@ def _extract_keywords(quote:str,*,limit:int=12)->List[str]:
     ordered=sorted(first_positions,key=lambda token:(-len(token),first_positions[token]))
     return ordered[:limit]
 
+
+def parse_source_hint(hint:str)->Tuple[str,str]:
+    """从 DOI、CNKI 链接或其他来源提示中提取不依赖会话参数的标识。"""
+    raw=(hint or "").strip()
+    if not raw:
+        return "",""
+    match=_DOI_IN_TEXT_RE.search(raw)
+    doi=normalize_doi(match.group(0) if match else raw)
+    if doi:
+        return "doi",doi
+    redacted_match=re.search(
+        r"\bCNKI\s+filename\s*=\s*([^\s&]+)",raw,flags=re.IGNORECASE
+    )
+    if redacted_match:
+        return "cnki_filename",redacted_match.group(1).strip()
+    try:
+        query=parse_qs(urlparse(raw).query)
+    except ValueError:
+        query={}
+    for key,values in query.items():
+        if key.lower()=="filename" and values:
+            filename=values[0].strip()
+            if filename:
+                return "cnki_filename",filename
+    return "",""
+
+
+def redact_source_hint(hint:str)->str:
+    """生成可写入历史或诊断信息的来源摘要，去掉查询串和会话令牌。"""
+    raw=(hint or "").strip()
+    kind,value=parse_source_hint(raw)
+    if kind=="doi":
+        return "DOI: %s"%value
+    if kind=="cnki_filename":
+        return "CNKI filename=%s"%value
+    if not raw:
+        return ""
+    if re.search(
+        r"(?:invoice|nonce|token|session|ticket)=",raw,flags=re.IGNORECASE
+    ):
+        return "<已脱敏来源提示>"
+    try:
+        parsed=urlparse(raw)
+    except ValueError:
+        return raw[:80]
+    if parsed.scheme in("http","https") and parsed.netloc:
+        return "%s://%s%s"%(parsed.scheme,parsed.netloc,parsed.path)
+    return raw[:80]
+
 @dataclass
 class TraceReport:
     """溯源过程的诊断信息"""
@@ -78,6 +132,7 @@ class TraceReport:
     bm25_support:bool=False
     vector_candidates:int=0
     vector_error:str=""
+    vector_cross_language:int=0
     online_queried:bool=False  #是否真的发起过联网检索
     online_error:str=""
     online_filtered_cross_language:int=0
@@ -97,6 +152,8 @@ class TraceReport:
             bits.append("向量候选 %d"%self.vector_candidates)
         elif self.vector_error:
             bits.append("向量未完成")
+        if self.vector_cross_language:
+            bits.append("跨语种语义候选 %d"%self.vector_cross_language)
         if self.spanned_chunks>1:
             bits.append("跨 %d 个片段拼接"%self.spanned_chunks)  #跨片段才值得说一句
         if self.online_queried:
@@ -158,6 +215,23 @@ class QuoteTracer:
         report.fingerprint_n=self.phrase.n
         report.config_warning=self.config_warning or ""
         text=(quote or "").strip()  #统一成去空白后的文本，后面所有环节都用它
+        report.quote_chars=len(text)
+        if len(text)>self.settings.trace_max_chars:
+            result=TraceResult(
+                query=text[:200],
+                level="input_too_long",
+                note=(
+                    "输入共 %d 字，超过单次溯源上限 %d 字。"
+                    "请截取最关键的连续段落后重试。"
+                    %(len(text),self.settings.trace_max_chars)
+                ),
+            )
+            report.elapsed_seconds=time.monotonic()-started
+            _LOG.warning(
+                "trace rejected length=%d limit=%d elapsed=%.3f",
+                len(text),self.settings.trace_max_chars,report.elapsed_seconds,
+            )
+            return result,report
         result=TraceResult(query=text,note="")
         online_request=OnlineRequest(
             query=text,
@@ -173,11 +247,12 @@ class QuoteTracer:
             result.level="empty"  #空输入单独标识，别让上层把“未输入”当成“本地未找到”
             result.note="输入为空。"  #把原因写进note而不是抛异常
             report.elapsed_seconds=time.monotonic()-started
+            _LOG.info("trace empty")
             return result,report
 
         tokens=exact_tokens(text)  #用精确词元切分而不走模糊分支
-        report.quote_chars=len(text)
         report.quote_tokens=len(tokens)
+        query_language=self._query_language(text)
 
         if len(tokens)<3:  #少于3个词元直接拒绝：短片段重合概率太高
             result.note=("输入太短（仅 %d 个有效词元），无法可靠溯源。"
@@ -206,6 +281,45 @@ class QuoteTracer:
                 semantic_hits=[
                     self._vector_to_search_hit(hit) for hit in vector_hits
                 ]
+                preferred_hits=[
+                    hit for hit in semantic_hits
+                    if hit.doc is not None
+                    and self._matches_language(hit.doc,query_language)
+                ]
+                if query_language=="zh" and not preferred_hits:
+                    report.vector_cross_language=len(semantic_hits)
+                    result.level="local_semantic"
+                    result.hit=None
+                    result.candidates=semantic_hits[:max(1,top_k)]
+                    result.confidence=0.0
+                    result.decision_basis=DecisionBasis.NONE.value
+                    result.supporting_signals=SupportSignals(
+                        bm25=False,vector=True,same_chunk_id=False
+                    ).to_dict()
+                    result.supporting_signals["vector_similarity"]=round(
+                        semantic_hits[0].score,4
+                    )
+                    result.note=(
+                        "本地向量只找到 %d 个跨语种候选，未放入主结果。"
+                        "当前本地库没有中文原文证据，建议勾选联网后续查中文来源；"
+                        "跨语种语义相似不能证明出处。"
+                        %len(semantic_hits)
+                    )
+                    self._maybe_try_online(
+                        text,result,report,online_request,keep_local=True,
+                        online_interactive=online_interactive,
+                        source_hint=source_hint,
+                    )
+                    report.elapsed_seconds=time.monotonic()-started
+                    _LOG.info(
+                        "trace semantic_cross_language candidates=%d online=%s "
+                        "elapsed=%.3f",
+                        len(semantic_hits),report.online_queried,
+                        report.elapsed_seconds,
+                    )
+                    return result,report
+                if preferred_hits:
+                    semantic_hits=preferred_hits
                 best_semantic=semantic_hits[0]
                 result.level="local_semantic"
                 result.hit=best_semantic
@@ -233,6 +347,11 @@ class QuoteTracer:
                     source_hint=source_hint,
                 )
                 report.elapsed_seconds=time.monotonic()-started
+                _LOG.info(
+                    "trace semantic candidates=%d online=%s elapsed=%.3f",
+                    len(semantic_hits),report.online_queried,
+                    report.elapsed_seconds,
+                )
                 return result,report
             result.level="none"  #none是五级判定的兜底档
             result.note=self._no_local_match_note()
@@ -242,6 +361,12 @@ class QuoteTracer:
                 source_hint=source_hint,
             )
             report.elapsed_seconds=time.monotonic()-started
+            _LOG.info(
+                "trace none online=%s filtered_cross_language=%d "
+                "filtered_low_relevance=%d elapsed=%.3f",
+                report.online_queried,report.online_filtered_cross_language,
+                report.online_filtered_low_relevance,report.elapsed_seconds,
+            )
             return result,report
 
         #跨片段拼接
@@ -341,6 +466,13 @@ class QuoteTracer:
             )
 
         report.elapsed_seconds=time.monotonic()-started  #成功路径同样结算耗时
+        _LOG.info(
+            "trace result level=%s found=%s confidence=%.4f "
+            "phrase_candidates=%d vector_candidates=%d online=%s elapsed=%.3f",
+            result.level,result.found,result.confidence,
+            report.phrase_candidates,report.vector_candidates,
+            report.online_queried,report.elapsed_seconds,
+        )
         return result,report
 
     def _vector_search(self,text:str)->List[VectorHit]:
@@ -673,8 +805,11 @@ class QuoteTracer:
         topic_words=tokenize(quote)[:3]
         query_language=self._query_language(quote)
         api_sources=self._online_sources_for(query_language)
+        hint_kind,hint_value=parse_source_hint(source_hint)
 
-        extra_jobs=1+(1 if source_hint else 0)
+        # DOI 可以独立解析；CNKI 文献标识用于给同一批 CNKI 搜索结果排序，
+        # 不把带 invoice/nonce 的完整会话 URL 再发给任何来源。
+        extra_jobs=1+(1 if hint_kind=="doi" else 0)
         pool=ThreadPoolExecutor(max_workers=len(api_sources)+extra_jobs,
                                 thread_name_prefix="lit-online")
         try:
@@ -683,7 +818,7 @@ class QuoteTracer:
             futures[pool.submit(
                 self._opencli_search,quote,interactive=online_interactive
             )]=self.OPENCLI_SOURCE
-            if source_hint:
+            if hint_kind=="doi":
                 futures[pool.submit(self._hint_search,source_hint)]="source-hint"
             started=time.monotonic()
             done,pending=wait(futures,timeout=self.ONLINE_GRACE)
@@ -755,11 +890,20 @@ class QuoteTracer:
         seen_titles:set=set()
         filtered_cross_language=0
         filtered_low_relevance=0
+        hint_matched=False
         for doc in self._interleave(batches):  #交叉合并后按序过筛，各源占比自然均衡
             doc_type=str((doc.extra or{}).get("type") or "").lower()  #extra可能没有也可能不是字典
             if doc_type in self.ONLINE_SKIP_TYPES:
                 continue
             explicit_hint=bool((doc.extra or{}).get("source_hint"))
+            if hint_kind=="cnki_filename":
+                raw_hint=(
+                    "%s %s"%(doc.url or "",(doc.extra or{}).get("opencli_raw") or "")
+                )
+                if hint_value.lower() in raw_hint.lower():
+                    explicit_hint=True
+                    hint_matched=True
+                    doc.extra["source_hint"]=True
             if not explicit_hint and not self._matches_language(doc,query_language):
                 filtered_cross_language+=1
                 continue
@@ -777,6 +921,7 @@ class QuoteTracer:
 
         tier_order={"primary_api":0,"browser_supplement":1,"external_other":2}
         collected.sort(key=lambda doc:(
+            0 if (doc.extra or{}).get("source_hint") else 1,
             tier_order.get(source_tier_for(doc.source).value,3),
             -float((doc.extra or{}).get("online_relevance") or 0.0),
             doc.source,
@@ -785,6 +930,13 @@ class QuoteTracer:
         collected=collected[:self.ONLINE_MAX_CANDIDATES]
 
         report.online_error="；".join(errors[:4])  #多个源的错误合并成一行，个别源失败不再抹掉别的源的成功
+        if hint_kind=="cnki_filename" and not hint_matched:
+            hint_error=(
+                "source-hint: 已识别 CNKI 文献标识，但本轮候选未包含该标识"
+            )
+            report.online_error="；".join(
+                part for part in(report.online_error,hint_error) if part
+            )
         report.online_filtered_cross_language=filtered_cross_language
         report.online_filtered_low_relevance=filtered_low_relevance
 

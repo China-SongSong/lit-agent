@@ -15,6 +15,9 @@ from litagent.config import ensure_deps_on_path,get_settings
 
 settings=get_settings()
 ensure_deps_on_path(settings.deps_dir)
+from litagent.logging_setup import setup_logging
+
+setup_logging(settings,component="cli")
 
 #Windows 控制台默认 GBK
 try:
@@ -453,6 +456,74 @@ def cmd_index(args:argparse.Namespace)->int:
              stats["vocabulary"],stats["fingerprints"]))
     return 0
 
+#search
+def cmd_search(args:argparse.Namespace)->int:
+    """在本地语料中检索文献或正文片段。"""
+    store=_open_store()
+    if store is None:
+        return 1
+
+    query=" ".join(args.query).strip()
+    if not query:
+        print("请提供检索词，例如：cli.py search \"图神经网络 推荐系统\"")
+        return 1
+
+    from litagent.retrieve.search import HybridSearcher
+
+    searcher=HybridSearcher(store,settings)
+    if args.documents:
+        items,report=searcher.search_documents(query,top_k=args.top_k)
+        rows=[
+            {
+                "title":doc.title,
+                "authors":[author.display for author in doc.authors],
+                "year":doc.year,
+                "venue":doc.venue,
+                "doi":doc.doi,
+                "url":doc.url,
+                "score":round(score,6),
+            }
+            for doc,score,_ in items
+        ]
+    else:
+        hits,report=searcher.search(query,top_k=args.top_k)
+        rows=[
+            {
+                "title":hit.doc.title if hit.doc else "",
+                "year":hit.doc.year if hit.doc else None,
+                "venue":hit.doc.venue if hit.doc else None,
+                "doi":hit.doc.doi if hit.doc else None,
+                "url":hit.doc.url if hit.doc else None,
+                "chunk_id":hit.chunk_id,
+                "section":hit.section,
+                "page":hit.page,
+                "score":round(hit.score,6),
+                "snippet":hit.text[:260],
+            }
+            for hit in hits
+        ]
+
+    if args.json:
+        print_json({"report":report.summary(),"results":rows})
+        return 0
+
+    print_header("本地检索")
+    print("  "+report.summary())
+    if not rows:
+        print("  没有找到匹配结果。")
+        return 0
+    for index,row in enumerate(rows,start=1):
+        print()
+        print("  %d. %s"%(index,row.get("title") or row.get("chunk_id")))
+        meta=" | ".join(str(value) for value in(
+            row.get("year"),row.get("venue"),row.get("doi")
+        ) if value)
+        if meta:
+            print("     "+meta)
+        if row.get("snippet"):
+            print("     "+row["snippet"].replace("\n"," "))
+    return 0
+
 #summarize
 def cmd_summarize(args:argparse.Namespace)->int:
     """LLM 结构化总结。"""
@@ -800,6 +871,14 @@ def build_parser()->argparse.ArgumentParser:
     p=sub.add_parser("stats",help="打印全库统计")
     p.add_argument("--json",action="store_true",help="以 JSON 输出")
     p.set_defaults(func=cmd_stats)
+
+    p=sub.add_parser("search",help="检索本地文献或正文片段")
+    p.add_argument("query",nargs="+",help="检索词")
+    p.add_argument("--top-k",type=int,default=10,help="返回条数")
+    p.add_argument("--documents",action="store_true",
+                   help="按文献聚合，而不是返回正文片段")
+    p.add_argument("--json",action="store_true",help="以 JSON 输出")
+    p.set_defaults(func=cmd_search)
 
     p=sub.add_parser("fetch",help="抓取文献")
     p.add_argument("--source",default="openalex",

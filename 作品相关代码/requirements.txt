@@ -1,14 +1,14 @@
-# lit-agent 依赖清单，Python 3.9 以上
+# lit-agent 依赖清单，Python 3.12 以上
 # 安装：pip install -r requirements.txt
 
-requests>=2.31      # 联网抓文献，OpenAlex / Crossref / arXiv / Semantic Scholar
-jieba>=0.42.1       # 中文分词，BM25 和指纹索引都要用
-PyMuPDF>=1.23       # PDF 抽文字，导入名是 pymupdf 或 fitz
-streamlit>=1.30     # 网页界面
+requests==2.34.2    # 联网抓文献，OpenAlex / Crossref / arXiv / Semantic Scholar
+jieba==0.42.1       # 中文分词，BM25 和指纹索引都要用
+PyMuPDF==1.28.2     # PDF 抽文字，导入名是 pymupdf 或 fitz
+streamlit==1.64.0   # 网页界面
 # 本地神经语义向量：多语 MiniLM ONNX 推理与 SentencePiece 分词
-numpy>=1.26
-onnxruntime>=1.20
-sentencepiece>=0.2
+numpy==2.5.3
+onnxruntime==1.31.1
+sentencepiece==0.2.3
 
 # OpenCLI 运行时（非 pip 依赖，不要写入上面的 pip 安装段）：
 #   Node.js >= 20.18.1

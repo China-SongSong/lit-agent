@@ -7,8 +7,9 @@
 
 ## 怎么跑起来
 
-双击 `作品相关代码` 文件夹里的 `一键运行.bat`，剩下的交给它：检查 Python、装依赖、建索引、开网页。
-浏览器大概 8 秒后自动打开 <http://127.0.0.1:8501>，没自动打开就手动输一下地址。
+双击 `作品相关代码` 文件夹里的 `一键运行.bat`，剩下的交给它：检查 Python、
+安装锁定版本依赖、建索引、启动 OpenCLI Browser Bridge、开网页。浏览器大概
+8 秒后自动打开 <http://127.0.0.1:8501>，没自动打开就手动输一下地址。
 关掉命令行窗口，服务就停了。
 
 只想确认环境有没有问题、不想开网页，在命令行里加上 check：
@@ -42,9 +43,9 @@ BM25 只作为诊断旁证记录，不再向置信度增加固定分数。`found
 
 ## 运行环境
 
-Windows 10 / 11，Python 3.9 及以上（开发时用的是 3.14.7）。
-需要 requests、jieba、PyMuPDF、streamlit、numpy、onnxruntime 和 sentencepiece，
-完整清单在 `requirements.txt` 里。
+Windows 10 / 11，Python 3.12 及以上（开发时用的是 3.14.7）。
+需要 requests、jieba、PyMuPDF、streamlit、numpy、onnxruntime 和 sentencepiece。
+`requirements.txt` 全部使用 `==` 精确锁版，保证干净环境可以复现。
 
 ```
 pip install -r requirements.txt
@@ -129,6 +130,10 @@ LIT_VECTOR_TRIGGER_RATIO=0.85
    原文置信度；这类结果不能直接当作出处。
 7. 本地溯源命中和文献库详情可展开“查看全文”；联网候选可展开摘要和原文/PDF
    入口，未抓取全文时会明确提示只有题录或摘要。
+8. 全文使用高对比阅读区展示，正文为深色、正常行距并自动换行；长文在固定
+   高度内滚动，不再因禁用输入框而显示成浅灰小字。
+9. 中文查询只把中文语义候选放入主结果。若本地只有英文语义候选，系统会放在
+   折叠的“跨语种语义候选”中，并提示联网查找中文来源。
 
 ## 联网兜底
 
@@ -155,13 +160,18 @@ OpenCLI 只作为外部候选，不参与本地 `found` 判定。
   `preview=false`。这样可以避免一次对话改变语料基线。
 - OpenCLI 需要 Node.js、OpenCLI Browser Bridge 扩展和浏览器。缺少扩展时系统仍可
   正常使用 API 与本地检索；建议用 `LIT_OPENCLI_PROFILE` 指定专用浏览器配置。
-  首次使用中文站点时运行 `启动OpenCLI浏览器.bat`，在专用窗口中手动登录或完成
-  安全验证，并保持窗口开启。交互式 CNKI 查询默认最多等待 35 秒。项目使用
+  `一键运行.bat` 会自动调用 `start_opencli_browser.bat`，日常不需要再单独启动
+  浏览器。Edge 158 及以上可能把命令行开发扩展关闭；一键脚本会检测连接，首次
+  使用时自动打开扩展管理页和扩展文件夹，按页面提示启用开发者模式并“加载
+  解压缩的扩展”一次即可。之后仍只需双击 `一键运行.bat`。在专用窗口中完成
+  站点登录或安全验证，并保持窗口开启。交互式 CNKI 查询默认最多等待 35 秒。项目使用
   `kns.cnki.net/kns8s` 国内入口；安装或重新安装本地适配器时运行
   `安装OpenCLI学术站点修复.bat`。遇到滑块验证会明确提示 `CNKI_AUTH_REQUIRED`。
 
-溯源页可选填 DOI 或包含 DOI 的来源链接；联网候选卡片提供“打开原文 / 来源页”
-按钮。没有可直接访问 URL 时，会用 DOI 生成 `https://doi.org/<DOI>` 跳转链接。
+溯源页可选填 DOI、包含 DOI 的来源链接，或带 `filename=...` 的 CNKI 链接。
+系统只提取 DOI 或 CNKI 文献标识，`invoice`、`nonce` 等会话参数不会写入查询
+历史。联网候选卡片提供“打开原文 / 来源页”按钮。没有可直接访问 URL 时，会用
+DOI 生成 `https://doi.org/<DOI>` 跳转链接。
 
 文献会自动生成学科标签，例如“新闻传播学类”“社会学类”“历史学类”，一篇
 文献可以同时拥有多个交叉学科标签。标签保存在独立的 `document_tags` 表中，
@@ -206,7 +216,8 @@ lit_agent/                        作品总目录
    ├─ 一键运行.bat                一键运行，推荐入口
    ├─ 一键运行说明.txt            一键运行的中文分步说明
    ├─ 启动网页.bat                只启动网页的旧入口
-   ├─ 启动OpenCLI浏览器.bat      启动带 Browser Bridge 的专用浏览器
+   ├─ start_opencli_browser.bat  一键入口内部调用并检测 Browser Bridge
+   ├─ 启动OpenCLI浏览器.bat      兼容入口，转发到上面的启动脚本
    ├─ 安装OpenCLI学术站点修复.bat 安装项目内 CNKI 适配器覆盖
    ├─ requirements.txt            依赖清单
    ├─ vendor/                     Browser Bridge 扩展和 OpenCLI CLI/适配器
@@ -225,6 +236,7 @@ lit_agent/                        作品总目录
       └─ data/
          ├─ models/               本地 ONNX 神经向量模型
          ├─ evaluation/           固定测评集与校准结果
+         ├─ logs/                 轮转运行日志
          └─ index.db              本地运行索引
 ```
 
@@ -236,6 +248,8 @@ lit_agent/                        作品总目录
 ```
 python cli.py doctor                  环境自检，加 --probe 会真的调一次大模型
 python cli.py init                    建库，目录 + SQLite 表结构
+python cli.py search "主题"             本地检索正文片段
+python cli.py search "主题" --documents 按文献聚合检索
 python cli.py fetch -q "主题" --limit 20    联网抓文献
 python cli.py fetch --local --path "D:\我的PDF"    导入本地 PDF
 python cli.py download --limit 10     下载开放获取的全文 PDF
@@ -248,6 +262,11 @@ python cli.py summarize               批量结构化总结，需要大模型密
 python cli.py stats                   语料统计
 python cli.py ui                      启动网页界面
 ```
+
+单次溯源默认最多处理 20,000 字，超过后直接提示截取关键段落，不再进入索引
+和联网链路。可用 `LIT_TRACE_MAX_CHARS` 调整。CLI 与网页都会写入轮转日志：
+`data/logs/litagent.log`，单文件 2 MB、保留 5 份；日志不记录完整查询、密钥
+或来源链接会话参数。
 
 ## 已修复的边界问题
 
@@ -263,6 +282,11 @@ python cli.py ui                      启动网页界面
 - RIS 使用 `T1` 和 `Y1` 主字段；HTTP 错误对象提供 `retryable` 标记。
 - 含假名的文本判为日文；arXiv `journal_ref` 支持年份后接页码的写法。
 - 学科词典已覆盖电池储能、网络爬虫和数据引用；当前生产库综合类为 0。
+- 全文阅读改为深色正文和段落排版；中文查询不再把低分跨语种向量候选放在
+  主命中位置。
+- CNKI 来源链接只保留 `filename` 文献标识，会话令牌不会进入查询历史。
+- 一键启动自动拉起 OpenCLI 浏览器，并在扩展未连接时进入一次性安全确认流程。
+- 依赖精确锁版，增加 20,000 字查询上限、轮转日志和命令 `search`。
 
 ## 已知问题
 
@@ -275,6 +299,8 @@ python cli.py ui                      启动网页界面
 - 20,000 片段时混合检索 P95 已超过 1 秒；更大规模需要分片、预筛或 ANN，
   当前交互场景建议控制在一万片段以内。
 - CNKI 页面可能要求登录、滑块或机构验证；系统不会绕过验证。
+- Edge 158 及以上会拦截命令行加载开发扩展。一键脚本已自动检测并打开一次性
+  设置页；扩展仍需用户确认启用一次，浏览器安全机制不允许程序静默绕过。
 - 题录级或短正文文献无法可靠生成方法、发现、贡献、局限等结构化字段，
   界面会标注输入限制，不建议反复重生成。
 - 系统只给判断依据和置信度，不作学术结论，引用前请自行核对原文。

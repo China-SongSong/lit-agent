@@ -15,11 +15,15 @@ if str(PROJECT_ROOT) not in sys.path:
 import streamlit as st
 
 from litagent.config import ensure_deps_on_path,get_settings
+from litagent.logging_setup import setup_logging
 
 settings=get_settings()
 ensure_deps_on_path(settings.deps_dir)
+setup_logging(settings,component="streamlit")
 
 from litagent.index.store import Store
+from litagent.presentation import readable_text_html
+from litagent.retrieve.trace import redact_source_hint
 from litagent.schema import summary_quality
 
 st.set_page_config(
@@ -138,9 +142,9 @@ def _render_document_content(
     """只读展示全文；没有全文时明确降级到摘要。"""
     if fulltext.strip():
         st.caption("全文共 %d 字。"%len(fulltext))
-        st.text_area(
-            "全文（只读）",fulltext,height=520,disabled=True,
-            key=key+"_fulltext",
+        st.markdown(
+            readable_text_html(fulltext),
+            unsafe_allow_html=True,
         )
         st.download_button(
             "下载全文文本",fulltext,file_name="fulltext.txt",
@@ -149,14 +153,12 @@ def _render_document_content(
         return
     if abstract.strip():
         st.caption("该记录没有可用的本地全文，以下是摘要。")
-        st.text_area(
-            "摘要（只读）",abstract,height=260,disabled=True,
-            key=key+"_abstract",
+        st.markdown(
+            readable_text_html(abstract,max_height_vh=38),
+            unsafe_allow_html=True,
         )
         return
     st.info("该记录目前只有题录信息，没有摘要或全文。")
-
-
 def _local_fulltext_for_item(item:Dict[str,Any])->str:
     """本地结果按 ID 取全文；联网候选不借用同名本地记录。"""
     if item.get("candidate_kind")=="online_candidate":
@@ -362,10 +364,11 @@ def tab_trace()->None:
         key="trace_input",
     )
     source_hint=st.text_input(
-        "DOI / 含 DOI 的来源链接（选填）",
-        placeholder="例如 10.1360/tb-2024-0376 或 https://doi.org/...",
+        "DOI / 学术站点来源链接（选填）",
+        placeholder="例如 10.1360/tb-2024-0376 或包含 filename=... 的 CNKI 链接",
         key="trace_source_hint",
-        help="系统会优先按 DOI 解析题录；普通 CNKI 文章页仍用正文执行联网检索。",
+        help=("系统会从链接中只提取 DOI 或 CNKI 文献标识，"
+              "invoice、nonce 等会话参数不会写入查询历史。"),
     )
 
     col1,col2,col3=st.columns([1,1,2])
@@ -405,7 +408,7 @@ def tab_trace()->None:
         result_count=(1 if result.hit is not None else 0)+len(result.online_candidates),
         metadata={
             "allow_online":bool(allow_online),
-            "source_hint":source_hint,
+            "source_hint":redact_source_hint(source_hint),
             "confidence":result.confidence,
             "candidates":history_candidates,
         },
@@ -418,9 +421,11 @@ def tab_trace()->None:
         st.warning("⚠️ 只有部分文本重合，不足以确认出处。**请勿直接据此引用。**")
     elif result.level=="local_semantic":
         st.warning(
-            "⚠️ 精确指纹未命中，以下为向量召回的语义相关候选。"
+            "⚠️ 精确指纹未命中，向量召回只提供了语义线索。"
             "**向量相似不能证明原文出处，请勿直接据此引用。**"
         )
+    elif result.level=="input_too_long":
+        st.warning("⚠️ 输入超过单次溯源上限，请截取最关键的连续段落后重试。")
     else:
         st.error("❌ 本地语料中没有找到这段话的出处。")
 
@@ -509,7 +514,11 @@ def tab_trace()->None:
         st.info(result.note)
 
     if result.candidates:
-        with st.expander("其他候选（置信度较低）"):
+        title=(
+            "跨语种语义候选（未放入主结果）"
+            if report.vector_cross_language else "其他候选（置信度较低）"
+        )
+        with st.expander(title):
             for rank,hit in enumerate(result.candidates[:5],start=1):
                 doc=hit.doc
                 st.write("%d. %.3f ｜ %s"%(rank,hit.score,
@@ -580,6 +589,14 @@ def tab_docs()->None:
     col1.metric("库里共","%d 篇"%len(rows))
     col2.metric("可检索","%d 篇"%len(ready))
     col3.metric("未清洗","%d 篇"%len(pending))
+    fulltext_count=sum(1 for row in rows if row["ntext"]>0)
+    abstract_count=sum(1 for row in rows if row["level"] in("全文","摘要"))
+    fulltext_rate=fulltext_count/len(rows) if rows else 0.0
+    st.caption(
+        "内容覆盖：全文 %d/%d（%.0f%%），摘要或全文 %d/%d。"
+        "只有含全文的记录能够进行原文级溯源；摘要级记录用于检索和发现。"
+        %(fulltext_count,len(rows),fulltext_rate*100,abstract_count,len(rows))
+    )
     with st.expander("学科标签管理"):
         st.caption("标签根据题名、关键词、摘要和出版物自动生成，可同时属于多个学科。")
         if st.button("按当前规则重建全部标签",key="docs_rebuild_tags"):

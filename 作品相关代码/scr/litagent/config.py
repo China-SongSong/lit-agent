@@ -178,6 +178,7 @@ _NUMERIC_BOUNDS={
     "chunk_overlap_chars":(0,1_000_000),
     "agent_max_rounds":(1,100),
     "agent_observation_chars":(256,1_000_000),
+    "trace_max_chars":(1000,1_000_000),
     "streamlit_port":(1,65535),
 }
 
@@ -232,6 +233,7 @@ class Settings:
     chunk_overlap_chars:int=200  #相邻片段重叠多少字
     agent_max_rounds:int=12
     agent_observation_chars:int=4000
+    trace_max_chars:int=20000
     #网页端口配置
     streamlit_port:int=8501
     _notes:List[str]=field(default_factory=list,repr=False)
@@ -277,6 +279,10 @@ class Settings:
         """缓存目录"""
         return self.data_dir/"cache" 
     @property
+    def logs_dir(self)->Path:
+        """轮转日志目录。"""
+        return self.data_dir/"logs"
+    @property
     def db_path(self)->Path:
         """SQLite数据库文件位置"""
         return self.data_dir/"index.db" 
@@ -290,6 +296,7 @@ class Settings:
             self.pdf_dir,
             self.summary_dir,
             self.cache_dir,
+            self.logs_dir,
         ]  #访问的是属性，不用写括号
     def ensure_dirs(self)->None:
         """创建全部数据目录（幂等）"""
@@ -324,7 +331,7 @@ class Settings:
         rows.append(("解释器",sys.executable,"info"))
         rows.append(
             ("Python版本","%d.%d.%d"%sys.version_info[:3],  #版本号前三位拼起来
-             "ok" if sys.version_info[:2]>=(3,9)else "warn")
+             "ok" if sys.version_info[:2]>=(3,12)else "warn")
         )
         rows.append(("项目根目录",str(self.project_root),"info"))
         rows.append(("数据目录",str(self.data_dir),  #追加数据目录
@@ -523,6 +530,10 @@ def build_settings()->Settings:
         agent_observation_chars=env_int(
             "LIT_AGENT_OBSERVATION_CHARS",default=4000,
             minimum=256,maximum=1_000_000,
+        ),
+        trace_max_chars=env_int(
+            "LIT_TRACE_MAX_CHARS",default=20000,
+            minimum=1000,maximum=1_000_000,
         ),
         streamlit_port=env_int(
             "LIT_STREAMLIT_PORT",default=8501,minimum=1,maximum=65535
