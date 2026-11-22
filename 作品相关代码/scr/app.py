@@ -71,7 +71,7 @@ def render_sidebar()->None:
         st.write("🧠 大模型："+("已配置" if settings.has_llm else "❌ 未配置"))
         if not settings.has_llm:
             st.info("未配置 `LIT_LLM_API_KEY`：**对话**不可用，但**溯源**完全正常。")
-        st.caption("本地召回：BM25 + 精确 n-gram 指纹")
+        st.caption("本地召回：BM25 + 精确 n-gram 指纹 + 神经向量")
         st.caption("联网时自动补充 OpenCLI 浏览器候选")
 
 #公共渲染：文献卡片
@@ -110,14 +110,65 @@ def _summary_status_label(
 def _candidate_link(item:Dict[str,Any])->str:
     """返回可安全展示的原文或题录链接。"""
     raw=str(item.get("url") or "").strip()
-    if raw:
-        parsed=urlparse(raw)
-        if parsed.scheme in("http","https"):
-            return raw
+    safe=_safe_http_link(raw)
+    if safe:
+        return safe
     doi=str(item.get("doi") or "").strip()
     if doi:
         return "https://doi.org/"+doi.removeprefix("https://doi.org/").strip("/")
     return ""
+
+
+def _safe_http_link(value:Any)->str:
+    """只允许 http/https 链接进入页面控件。"""
+    raw=str(value or "").strip()
+    if not raw:
+        return ""
+    parsed=urlparse(raw)
+    return raw if parsed.scheme in("http","https") else ""
+
+
+def _candidate_pdf_link(item:Dict[str,Any])->str:
+    return _safe_http_link(item.get("pdf_url"))
+
+
+def _render_document_content(
+    fulltext:str,abstract:str,*,key:str
+)->None:
+    """只读展示全文；没有全文时明确降级到摘要。"""
+    if fulltext.strip():
+        st.caption("全文共 %d 字。"%len(fulltext))
+        st.text_area(
+            "全文（只读）",fulltext,height=520,disabled=True,
+            key=key+"_fulltext",
+        )
+        st.download_button(
+            "下载全文文本",fulltext,file_name="fulltext.txt",
+            mime="text/plain",key=key+"_download",
+        )
+        return
+    if abstract.strip():
+        st.caption("该记录没有可用的本地全文，以下是摘要。")
+        st.text_area(
+            "摘要（只读）",abstract,height=260,disabled=True,
+            key=key+"_abstract",
+        )
+        return
+    st.info("该记录目前只有题录信息，没有摘要或全文。")
+
+
+def _local_fulltext_for_item(item:Dict[str,Any])->str:
+    """本地结果按 ID 取全文；联网候选不借用同名本地记录。"""
+    if item.get("candidate_kind")=="online_candidate":
+        return ""
+    doc_id=str(item.get("doc_id") or item.get("id") or "").strip()
+    if not doc_id:
+        return ""
+    try:
+        return get_store().get_fulltext(doc_id) or ""
+    except Exception:  # noqa: BLE001
+        return ""
+
 
 def render_paper_card(item:Dict[str,Any],index:Optional[int]=None,
                       expanded:bool=False)->None:
@@ -150,6 +201,25 @@ def render_paper_card(item:Dict[str,Any],index:Optional[int]=None,
         link=_candidate_link(item)
         if link:
             st.link_button("打开原文 / 来源页",link)
+        show_content=st.checkbox(
+            "查看全文 / 摘要",
+            key="card_content_%s_%s"%(
+                item.get("id") or item.get("doi") or item.get("title"),
+                index,
+            ),
+        )
+        if show_content:
+            pdf_link=_candidate_pdf_link(item)
+            if pdf_link:
+                st.link_button("打开 PDF",pdf_link)
+            _render_document_content(
+                _local_fulltext_for_item(item),
+                str(item.get("abstract") or ""),
+                key="card_%s_%s"%(
+                    item.get("id") or item.get("doi") or item.get("title"),
+                    index,
+                ),
+            )
         if item.get("snippet"):
             st.write(item["snippet"])
         if item.get("citation"):
@@ -411,6 +481,15 @@ def tab_trace()->None:
             if citation:
                 st.text_area("GB/T 7714-2015 引用（可直接复制）",citation,
                              height=80,key="trace_citation")
+            with st.expander("查看全文"):
+                try:
+                    fulltext=get_store().get_fulltext(doc.id) or ""
+                except Exception:  # noqa: BLE001
+                    fulltext=""
+                _render_document_content(
+                    fulltext,doc.abstract or "",
+                    key="trace_fulltext_"+doc.id,
+                )
     if result.online_candidates:
         if result.hit is not None:
             st.divider()
@@ -597,6 +676,16 @@ def tab_docs()->None:
                 st.write("**GB/T 7714**：%s"%format_gbt7714(doc.to_citation_dict()))
             except Exception:  #noqa: BLE001
                 pass
+
+        with st.expander("查看全文"):
+            try:
+                fulltext=store.get_fulltext(doc.id) or ""
+            except Exception:  #noqa: BLE001
+                fulltext=""
+            _render_document_content(
+                fulltext,doc.abstract or "",
+                key="library_fulltext_"+doc.id,
+            )
 
         summary=store.get_summary(one["id"])
         if summary is not None:

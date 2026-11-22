@@ -59,7 +59,13 @@ class ContractTests(unittest.TestCase):
             validate_trace_result(result)
 
     def test_online_candidate_cannot_be_local_evidence(self)->None:
-        doc=Document(id="doi:test",title="Test",authors=[Author(family="Li")])
+        doc=Document(
+            id="doi:test",
+            title="Test",
+            authors=[Author(family="Li")],
+            abstract="Available abstract",
+            extra={"pdf_url":"https://example.org/test.pdf"},
+        )
         candidate=SourceCandidate(
             provider="openalex",
             source="openalex",
@@ -69,6 +75,10 @@ class ContractTests(unittest.TestCase):
         payload=candidate.to_public_dict()
         self.assertFalse(payload["is_local_evidence"])
         self.assertEqual(payload["candidate_kind"],"online_candidate")
+        self.assertEqual(payload["abstract"],"Available abstract")
+        self.assertEqual(
+            payload["pdf_url"],"https://example.org/test.pdf"
+        )
 
         result=TraceResult(
             query="test",

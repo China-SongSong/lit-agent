@@ -130,6 +130,12 @@ class SourceCandidate:
             "venue":self.document.venue,
             "doi":self.document.doi,
             "url":self.document.url,
+            "abstract":self.document.abstract or "",
+            "pdf_url":str((self.document.extra or{}).get("pdf_url") or ""),
+            "has_fulltext":bool((self.document.fulltext or "").strip()),
+            "content_level":str(
+                (self.document.extra or{}).get("content_level") or ""
+            ),
             "discipline_tags":list(self.document.discipline_tags),
             "is_oa":self.document.is_oa,
             "score":self.score,
