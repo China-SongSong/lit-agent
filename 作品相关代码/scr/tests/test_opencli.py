@@ -57,11 +57,15 @@ class OpenCLITests(unittest.TestCase):
         quote=(
             "数字孪生技术通过构建物理实体的虚拟映射，实现对制造过程的"
             "实时监测与优化，为复杂系统提供新的研究范式。"
+            "制度构造包括“资格确认—状态维持—水平衡量”三个要件。"
         )
         metadata=chinese_metadata_query(quote)
         exact=exact_quote_query(quote)
         self.assertIn("数字",metadata)
         self.assertIn("孪生",metadata)
+        self.assertIn("资格确认",metadata)
+        self.assertIn("状态维持",metadata)
+        self.assertIn("水平衡量",metadata)
         self.assertLessEqual(len(metadata.split()),6)
         self.assertTrue(exact.startswith('"'))
         self.assertTrue(exact.endswith('"'))
@@ -92,7 +96,9 @@ class OpenCLITests(unittest.TestCase):
             source=OpenCLISource(settings)
             with patch.object(OpenCLISource,"availability",return_value=type(
                 "Status",(),{"available":True,"detail":"ok"}
-            )()), patch.object(source,"_run",return_value=completed) as run:
+            )()), patch.object(
+                OpenCLISource,"bridge_status",return_value=(True,"connected")
+            ), patch.object(source,"_run",return_value=completed) as run:
                 first,_=source.search_with_errors("cached query",limit=2)
                 second,_=source.search_with_errors("cached query",limit=2)
             self.assertEqual(len(first),1)
@@ -137,6 +143,20 @@ class OpenCLITests(unittest.TestCase):
                 with self.assertRaises(Exception):
                     source._search_site("wanfang","test",1)
             self.assertEqual(run.call_count,1)
+
+    def test_disconnected_bridge_fails_fast_with_actionable_message(self)->None:
+        source=OpenCLISource(Settings())
+        with patch.object(OpenCLISource,"availability",return_value=type(
+            "Status",(),{"available":True,"detail":"ok"}
+        )()), patch.object(
+            OpenCLISource,
+            "bridge_status",
+            return_value=(False,"Browser Bridge 扩展未连接"),
+        ), patch.object(source,"_run") as run:
+            documents,errors=source.search_with_errors("社会权",limit=2)
+        self.assertEqual(documents,[])
+        self.assertIn("未连接",errors[0])
+        run.assert_not_called()
 
 
 if __name__=="__main__":

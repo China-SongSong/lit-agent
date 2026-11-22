@@ -19,6 +19,8 @@ from concurrent.futures import ThreadPoolExecutor,as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any,Dict,List,Optional,Sequence,Tuple
+from urllib.error import URLError
+from urllib.request import Request,urlopen
 
 from litagent.config import Settings,settings as default_settings
 from litagent.fetch.base import Source,register_source
@@ -146,8 +148,15 @@ def _venue_type(value:Any)->str:
 
 def chinese_metadata_query(query:str,*,limit:int=6)->str:
     """把中文正文压成适合 CNKI/万方的题录关键词。"""
+    quoted_terms:List[str]=[]
+    for segment in re.findall(r"[“\"]([^”\"]{2,120})[”\"]",query or ""):
+        quoted_terms.extend(
+            term.strip()
+            for term in re.split(r"[—–\-]+",segment)
+            if term.strip()
+        )
     tokens=tokenize(query or "")
-    ordered:List[str]=[]
+    ordered:List[str]=list(dict.fromkeys(quoted_terms))
     for token in tokens:
         token=token.strip()
         if token and has_cjk(token) and token not in ordered:
@@ -343,6 +352,34 @@ class OpenCLISource(Source):
                 False,status.command,"%s: %s"%(type(exc).__name__,str(exc)[:160])
             )
 
+    @staticmethod
+    def bridge_status()->Tuple[bool,str]:
+        """快速读取本地 daemon 状态，确认浏览器扩展是否真的连上。"""
+        request=Request(
+            "http://127.0.0.1:19825/status",
+            headers={"X-OpenCLI":"lit-agent-health"},
+        )
+        try:
+            with urlopen(request,timeout=1.5) as response:
+                payload=json.loads(response.read().decode("utf-8"))
+        except(URLError,OSError,TimeoutError,ValueError):
+            return(
+                False,
+                "OpenCLI daemon 未运行；请双击“一键运行.bat”启动浏览器桥",
+            )
+        if payload.get("extensionConnected"):
+            return True,"Browser Bridge 已连接"
+        if payload.get("profiles"):
+            return(
+                False,
+                "OpenCLI 浏览器已打开，但当前 profile 未连接扩展",
+            )
+        return(
+            False,
+            "OpenCLI Browser Bridge 扩展未连接；"
+            "请在一键启动打开的管理页完成一次“加载解压缩的扩展”",
+        )
+
     def _cache_path(self,site:str,query:str,limit:int)->Path:
         key="%s\0%s\0%d"%(site,query,limit)
         digest=hashlib.sha1(key.encode("utf-8")).hexdigest()
@@ -527,7 +564,10 @@ class OpenCLISource(Source):
     )->Tuple[List[Document],List[str]]:
         runtime=self.availability()
         if not runtime.available:
-            return[],["opencli: "+runtime.detail]
+            return[],[runtime.detail]
+        connected,detail=self.bridge_status()
+        if not connected:
+            return[],[detail]
         sites=self.select_sites(query)
         per_site=max(1,min(int(limit),20))
         documents:List[Document]=[]

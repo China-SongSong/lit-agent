@@ -56,6 +56,13 @@ def get_tracer()->Any:
 
     return QuoteTracer(get_store(),settings)
 
+
+@st.cache_data(ttl=10,show_spinner=False)
+def get_opencli_bridge_status()->tuple[bool,str]:
+    from litagent.fetch.opencli import OpenCLISource
+
+    return OpenCLISource.bridge_status()
+
 #侧边栏：语料概况 + 能力状态
 def render_sidebar()->None:
     with st.sidebar:
@@ -77,6 +84,10 @@ def render_sidebar()->None:
             st.info("未配置 `LIT_LLM_API_KEY`：**对话**不可用，但**溯源**完全正常。")
         st.caption("本地召回：BM25 + 精确 n-gram 指纹 + 神经向量")
         st.caption("联网时自动补充 OpenCLI 浏览器候选")
+        bridge_connected,bridge_detail=get_opencli_bridge_status()
+        st.caption(
+            "联网浏览器："+("已连接" if bridge_connected else bridge_detail)
+        )
 
 #公共渲染：文献卡片
 #数据源名的显示写法：联网候选来自四个库，卡片上要用正式写法标清楚是哪一个

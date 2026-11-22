@@ -66,9 +66,21 @@ def _extract_keywords(quote:str,*,limit:int=12)->List[str]:
     if not tokens:
         return []
 
+    # 引号内的并列概念通常是论文的关键术语。先拆开破折号再补进词表，
+    # 避免长段落只取开头几个泛词，把“资格确认”等核心概念丢掉。
+    quoted_terms:List[str]=[]
+    for segment in re.findall(r"[“\"]([^”\"]{2,120})[”\"]",quote):
+        quoted_terms.extend(
+            term.strip()
+            for term in re.split(r"[—–\-]+",segment)
+            if term.strip()
+        )
+
     first_positions:Dict[str,int]={}
-    for position,token in enumerate(tokens):
+    for position,token in enumerate(quoted_terms):
         first_positions.setdefault(token,position)
+    for position,token in enumerate(tokens):
+        first_positions.setdefault(token,len(quoted_terms)+position)
 
     ordered=sorted(first_positions,key=lambda token:(-len(token),first_positions[token]))
     return ordered[:limit]
@@ -654,7 +666,21 @@ class QuoteTracer:
             finally:
                 source.close()  #放在finally里关
         except Exception as exc:  # noqa: BLE001，单源失败只记错误串，绝不打断整批
-            return source_name,[],"%s: %s"%(type(exc).__name__,str(exc)[:120])
+            from litagent.fetch.http import HttpError
+
+            if isinstance(exc,HttpError):
+                status=getattr(exc,"status",None)
+                if status==429:
+                    detail="HTTP 429 限流"
+                elif status:
+                    detail="HTTP %s"%status
+                elif getattr(exc,"retryable",False):
+                    detail="网络连接失败"
+                else:
+                    detail="请求失败"
+            else:
+                detail=type(exc).__name__
+            return source_name,[],detail
 
     def _opencli_search(
         self,quote:str,*,interactive:bool=False
@@ -734,7 +760,9 @@ class QuoteTracer:
     @staticmethod
     def _online_sources_for(query_language:str)->Tuple[str,...]:
         if query_language=="zh":
-            return("openalex","crossref")
+            # Crossref 的中文法学覆盖率很低，匿名交互请求也经常直接返回 429。
+            # 中文查询先走 OpenAlex，中文站点由 OpenCLI 浏览器补充层负责。
+            return("openalex",)
         return QuoteTracer.ONLINE_SOURCES
 
     @classmethod
@@ -974,6 +1002,12 @@ class QuoteTracer:
                 +"\n在线来源没有通过语种与相关度门槛的候选"
                 "（跨语种 %d 条，弱相关 %d 条）。"
                 %(filtered_cross_language,filtered_low_relevance)
+            ).strip()
+        if not collected and errors:
+            result.note=(
+                result.note
+                +"\n联网来源状态："
+                +"；".join(errors[:3])
             ).strip()
 
     @staticmethod

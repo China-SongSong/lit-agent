@@ -191,7 +191,7 @@ class TracePolicyTests(unittest.TestCase):
         with patch.object(
             tracer,"_online_search_one",
             side_effect=lambda name,keywords,topic:(
-                name,[chinese] if name=="openalex" else[foreign],""
+                name,[chinese,foreign],""
             ),
         ), patch.object(
             tracer,"_opencli_search",
@@ -203,6 +203,9 @@ class TracePolicyTests(unittest.TestCase):
             ["逐字重合语义相近网页搜索结果原文来源"],
         )
         self.assertEqual(report.online_filtered_cross_language,1)
+
+    def test_chinese_route_skips_crossref_rate_limit_noise(self)->None:
+        self.assertEqual(QuoteTracer._online_sources_for("zh"),("openalex",))
 
     def test_explicit_doi_hint_is_kept_and_exposes_link(self)->None:
         tracer=QuoteTracer(self.store,self.settings)

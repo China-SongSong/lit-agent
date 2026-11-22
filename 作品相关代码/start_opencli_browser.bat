@@ -6,7 +6,6 @@ set "ROOT=%~dp0"
 set "EXTDIR=%ROOT%vendor\opencli-extension"
 set "PROFILE=%LOCALAPPDATA%\lit-agent\OpenCLIEdgeProfileLogin"
 set "RUNTIME_EXT=%LOCALAPPDATA%\lit-agent\opencli-extension-1.0.27"
-set "CLI=%ROOT%vendor\opencli-cli\node_modules\@jackwener\opencli\dist\src\main.js"
 set "QUIET=0"
 if /i "%~1"=="quiet" set "QUIET=1"
 
@@ -51,13 +50,9 @@ start "" "%EDGE%" ^
 
 rem Edge 158+ may disable command-line developer extensions as a security
 rem measure. Verify the bridge and open the one-time setup pages if needed.
-if not exist "%CLI%" exit /b 0
 timeout /t 6 /nobreak >nul
-set "CONNECTED=0"
-for /f "usebackq delims=" %%L in (`node "%CLI%" doctor`) do (
-    echo %%L | findstr /C:"\"extensionConnected\":true" >nul && set "CONNECTED=1"
-)
-if "%CONNECTED%"=="1" (
+node -e "const http=require('http');const r=http.get({hostname:'127.0.0.1',port:19825,path:'/status',headers:{'X-OpenCLI':'lit-agent-health'}},x=>{let d='';x.on('data',c=>d+=c);x.on('end',()=>{try{process.exit(JSON.parse(d).extensionConnected?0:1)}catch(e){process.exit(1)}})});r.on('error',()=>process.exit(1));r.setTimeout(1500,()=>{r.destroy();process.exit(1)});" >nul 2>nul
+if not errorlevel 1 (
     if "%QUIET%"=="0" echo OpenCLI Browser Bridge is connected.
     exit /b 0
 )
