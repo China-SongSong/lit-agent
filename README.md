@@ -78,3 +78,5 @@ python cli.py search "图神经网络 推荐系统" --documents
 [`作品相关代码/scr/data/evaluation/large_benchmark_v1`](作品相关代码/scr/data/evaluation/large_benchmark_v1)。
 
 引用前请人工核对原文。联网候选、语义候选和任何外部检索结果都不等同于已核实出处。
+
+如果这个项目对你有帮助，欢迎点一下 Star。
