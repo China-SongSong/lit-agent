@@ -79,4 +79,6 @@ python cli.py search "图神经网络 推荐系统" --documents
 
 引用前请人工核对原文。联网候选、语义候选和任何外部检索结果都不等同于已核实出处。
 
+[![Star History Chart](https://api.star-history.com/svg?repos=China-SongSong/lit-agent&type=Date)](https://star-history.com/#China-SongSong/lit-agent&Date)
+
 如果这个项目对你有帮助，欢迎点一下 Star。
