@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 import unicodedata
 from functools import lru_cache
-from typing import Iterable,List,Sequence,Tuple
+from typing import Iterable, List, Sequence, Tuple
 
 TAGGER_VERSION="5"
 GENERAL_DISCIPLINE="综合类"

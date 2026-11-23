@@ -5,12 +5,12 @@
 """
 from __future__ import annotations
 
-import re   #正则：归一化、页码识别、行尾连字符都要用
-from dataclasses import dataclass,field   #用装饰器自动生成初始化与比较方法
-from pathlib import Path   #现代路径工具（跨win/Linux通用）
-from typing import Any,Dict,List,Optional,Sequence,Tuple    #类型提示专用
+import re  #正则：归一化、页码识别、行尾连字符都要用
+from dataclasses import dataclass, field  #用装饰器自动生成初始化与比较方法
+from pathlib import Path  #现代路径工具（跨win/Linux通用）
+from typing import Any, Dict, List, Optional, Sequence, Tuple  #类型提示专用
 
-from litagent.compat import get_pdf_module   #由'litagent.compat'兼容层去猜可用的PDF模块
+from litagent.compat import get_pdf_module  #由'litagent.compat'兼容层去猜可用的PDF模块
 
 
 # ---------------------------------------------------------------------------
@@ -257,7 +257,7 @@ def extract_with_pymupdf(path:Path,*,strip_headers:bool=True,
 
     try:
         pdf=fitz.open(str(path))
-    except Exception as exc:  # noqa: BLE001   #打不开的文件不中断整批，只记一条说明
+    except Exception as exc:  # noqa: BLE001
         result.errors.append("打开失败：%s: %s"%(type(exc).__name__,str(exc)[:150]))   #截到150字符，异常自带的整篇堆栈会撑爆日志
         result.method=""
         return result
@@ -274,7 +274,7 @@ def extract_with_pymupdf(path:Path,*,strip_headers:bool=True,
             # 空密码能解的加密 PDF 仍可读
             try:
                 pdf.authenticate("")   #很多论文只设了所有者密码，空密码放行，不该拦
-            except Exception:  # noqa: BLE001   #认证失败也照常往下走，正文取不到自然是空的
+            except Exception:  # noqa: BLE001
                 result.errors.append("PDF 已加密，无法读取正文")
 
         raw_pages:List[Tuple[int,float,float,List[Tuple[float,float,float,float,str]]]]=[]   #先把全部页攒起来：要算重复页眉必须看完所有页的边距带，不能边抽边删
@@ -352,7 +352,7 @@ def extract_with_pdfminer(path:Path)->PdfExtraction:
 
     try:
         text=_extract_text(str(path)) or ""
-    except Exception as exc:  # noqa: BLE001   #版面再怪也不能中断整批，失败就是没抽到
+    except Exception as exc:  # noqa: BLE001
         result.errors.append("pdfminer 抽取失败：%s: %s"%(
             type(exc).__name__,str(exc)[:150]))   #同样截150字符，异常详情只留够定位的部分
         result.method=""

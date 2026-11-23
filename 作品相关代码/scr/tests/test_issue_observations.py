@@ -6,10 +6,10 @@ from unittest.mock import patch
 
 import requests
 from litagent.cite.gbt7714 import format_ris
-from litagent.clean.normalize import detect_language,remove_invisible
+from litagent.clean.normalize import detect_language, remove_invisible
 from litagent.disciplines import classify_disciplines
 from litagent.fetch.arxiv import parse_journal_ref
-from litagent.fetch.base import HttpClient,HttpError
+from litagent.fetch.base import HttpClient, HttpError
 
 
 class IssueObservationTests(unittest.TestCase):

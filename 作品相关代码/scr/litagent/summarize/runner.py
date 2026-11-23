@@ -2,15 +2,17 @@
 from __future__ import annotations
 
 import time
-from concurrent.futures import ThreadPoolExecutor,as_completed
-from dataclasses import dataclass,field
-from typing import Any,Callable,List,Optional,Sequence
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass, field
+from typing import Any, Callable, List, Optional, Sequence
 
-from litagent.config import Settings,settings as default_settings
+from litagent.config import Settings
+from litagent.config import settings as default_settings
 from litagent.index.store import Store
-from litagent.schema import Document,Summary,utcnow
+from litagent.schema import Document, Summary, utcnow
 from litagent.summarize.extractor import SummaryExtractor
 from litagent.summarize.prompts import PROMPT_VERSION
+
 
 @dataclass
 class SummarizeReport:

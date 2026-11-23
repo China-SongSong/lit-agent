@@ -1,13 +1,13 @@
 """集中读取路径、网络和模型参数，生成全局 Settings。"""
 from __future__ import annotations
 
-import os
 import math
+import os
 import shutil
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List,Optional,Tuple
+from typing import List, Optional, Tuple
 
 PACKAGE_DIR:Path=Path(__file__).resolve().parent  #包成Path对象，并.resolve变成绝对路径
 PROJECT_ROOT:Path=PACKAGE_DIR.parent

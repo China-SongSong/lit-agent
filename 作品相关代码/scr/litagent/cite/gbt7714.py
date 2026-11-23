@@ -3,9 +3,10 @@
 #模块级导入
 from __future__ import annotations
 
-import re
 import html
-from typing import Any,Dict,List,Optional,Sequence,Tuple
+import re
+from typing import Any, Dict, List, Optional, Sequence, Tuple
+
 from litagent.schema import split_cjk_name
 
 __all__=[

@@ -3,14 +3,20 @@
 官方要求请求间隔至少 3 秒，所以客户端把速率限制为 0.33 QPS。接口返回
 Atom XML，journal_ref 可用来补齐预印本正式发表的期刊信息。
 """
-from __future__ import annotations  #导入未来特性，让类型注解变成延迟求值的字符串，低版本解释器也能写新语法。
+from __future__ import (
+    annotations,  #导入未来特性，让类型注解变成延迟求值的字符串，低版本解释器也能写新语法。
+)
 
 import re
 import xml.etree.ElementTree as ET  #导入标准库 XML 解析器并简写为 ET，用来解析 arXiv 返回的 Atom 文本。
-from typing import Any,Dict,List,Optional
+from typing import Any, Dict, List, Optional
 
-from litagent.fetch.base import Source,register_source
-from litagent.schema import Document,normalize_doi,parse_authors  #导入统一的文献模型，以及规范化 DOI、拆分作者字符串两个工具函数。
+from litagent.fetch.base import Source, register_source
+from litagent.schema import (  #导入统一的文献模型，以及规范化 DOI、拆分作者字符串两个工具函数。
+    Document,
+    normalize_doi,
+    parse_authors,
+)
 
 _ATOM="{http://www.w3.org/2005/Atom}"  #定义 Atom 命名空间前缀，查找元素必须带上这个花括号前缀才找得到。
 _ARXIV="{http://arxiv.org/schemas/atom}"  #定义 arXiv 自己的命名空间前缀，用于查找 doi、journal_ref 等扩展字段。

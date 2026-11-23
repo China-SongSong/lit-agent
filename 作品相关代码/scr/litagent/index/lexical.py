@@ -6,9 +6,9 @@ import math
 import re
 import warnings
 from pathlib import Path
-from typing import Any,Dict,List,Optional,Sequence,Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from litagent.schema import Chunk,has_cjk
+from litagent.schema import Chunk, has_cjk
 
 _jieba=None  #模块级变量，保存 jieba 模块本身
 _jieba_ready=False

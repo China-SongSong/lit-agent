@@ -8,11 +8,16 @@ from __future__ import annotations  #导入未来特性，让类型注解延迟�
 import re  #导入标准库 re，后面用它处理文件名和 Word 的 XML。
 import zipfile  #导入标准库 zipfile，因为 docx 本质就是一个压缩包。
 from pathlib import Path  #导入 Path，用它跨平台地表示和拼接文件路径。
-from typing import Any,Dict,Iterable,List,Optional,Sequence,Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from litagent.compat import get_pdf_module  #导入兼容层函数，用来取 PDF 解析模块，没装时会返回空值。
-from litagent.fetch.base import Source,register_source
-from litagent.schema import Document,content_hash,normalize_doi,parse_authors  #导入文档模型，以及内容指纹、DOI 规范化、作者解析三个工具。
+from litagent.fetch.base import Source, register_source
+from litagent.schema import (  #导入文档模型，以及内容指纹、DOI 规范化、作者解析三个工具。
+    Document,
+    content_hash,
+    normalize_doi,
+    parse_authors,
+)
 
 #注释：下面是支持的后缀定义。
 PDF_SUFFIXES={".pdf"}  #定义 PDF 后缀集合；用集合判断比列表快，而且自动去重。
@@ -113,7 +118,7 @@ def extract_pdf_metadata(path:Path)->Tuple[Dict[str,Any],Optional[str]]:  #定�
             if pdf.page_count:  #有页数才去读第一页，零页文档读页会直接报错。
                 first_page=pdf[0].get_text("text") or None  #读第一页纯文本；扫描版 PDF 没有文字层，这里会得到空值。
             meta["encrypted"]=bool(pdf.is_encrypted)  #记录这份 PDF 是否加密，转成布尔值方便后面判断。
-    except Exception as exc:  # noqa: BLE001  (损坏/加密 PDF 不应中断整批)，兜底捕获所有异常，注释说明坏文件不应中断整批。
+    except Exception as exc:  # noqa: BLE001
         meta["error"]="%s: %s"%(type(exc).__name__,str(exc)[:120])  #把异常类型和截断到一百二十个字符的消息记进元数据，方便排查。
     return meta,first_page
 
@@ -301,7 +306,7 @@ class LocalPdfSource(Source):
                     doc=self._from_text_file(path)
                 else:  #兜底分支，前面已经过滤过后缀，这里只防意外。
                     continue  #不认识的后缀直接跳过。
-            except Exception as exc:  # noqa: BLE001 单个文件失败不影响整批，捕获所有异常，注释说明单个文件失败不影响整批。
+            except Exception as exc:  # noqa: BLE001
                 doc=Document(  #出错也构造一个文档，把失败原因带出去。
                     id="local:"+str(path),  #出错时编号直接拼路径，这种文档只用于排查。
                     title=guess_title_from_filename(path),  #这时候标题只能用文件名来猜。
@@ -318,7 +323,7 @@ class LocalPdfSource(Source):
             if on_progress is not None:  #有进度回调才调用它。
                 try:  #开 try：回调是外部代码，可能抛异常。
                     on_progress(index,total,path)  #报告已完成数、总数和当前正在处理的文件。
-                except Exception:  # noqa: BLE001，回调出错也不能影响扫描本身。
+                except Exception:  # noqa: BLE001
                     pass  #什么都不做，静默忽略。
 
         return documents

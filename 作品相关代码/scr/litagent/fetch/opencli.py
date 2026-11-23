@@ -15,17 +15,18 @@ import shutil
 import subprocess
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor,as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any,Dict,List,Optional,Sequence,Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 from urllib.error import URLError
-from urllib.request import Request,urlopen
+from urllib.request import Request, urlopen
 
-from litagent.config import Settings,settings as default_settings
-from litagent.fetch.base import Source,register_source
+from litagent.config import Settings
+from litagent.config import settings as default_settings
+from litagent.fetch.base import Source, register_source
 from litagent.index.lexical import tokenize
-from litagent.schema import Document,has_cjk,normalize_doi,parse_authors
+from litagent.schema import Document, has_cjk, normalize_doi, parse_authors
 
 _WS_RE=re.compile(r"\s+")
 _YEAR_RE=re.compile(r"\b((?:19|20)\d{2})\b")

@@ -31,6 +31,16 @@
 python -B -m unittest discover -s tests -v
 ```
 
+在仓库根目录安装开发依赖并运行静态检查：
+
+```powershell
+python -m pip install -r requirements-dev.txt
+ruff check 作品相关代码/scr
+```
+
+GitHub Actions 的 `CI` 工作流会检出 Git LFS 模型、安装锁定依赖和项目内
+OpenCLI、执行 Ruff、编译 Python，并运行上述完整测试。
+
 ## 阈值校准
 
 ```powershell

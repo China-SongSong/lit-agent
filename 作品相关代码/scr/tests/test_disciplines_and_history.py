@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from litagent.disciplines import GENERAL_DISCIPLINE,classify_disciplines
+from litagent.disciplines import GENERAL_DISCIPLINE, classify_disciplines
 from litagent.index.store import Store
 from litagent.schema import Document
 

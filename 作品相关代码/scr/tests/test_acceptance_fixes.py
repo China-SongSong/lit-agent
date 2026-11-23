@@ -12,12 +12,12 @@ from litagent.index.store import Store
 from litagent.index.vector import VectorHit
 from litagent.logging_setup import setup_logging
 from litagent.presentation import readable_text_html
-from litagent.retrieve.trace import(
+from litagent.retrieve.trace import (
     QuoteTracer,
     parse_source_hint,
     redact_source_hint,
 )
-from litagent.schema import Chunk,Document
+from litagent.schema import Chunk, Document
 
 
 class PresentationTests(unittest.TestCase):

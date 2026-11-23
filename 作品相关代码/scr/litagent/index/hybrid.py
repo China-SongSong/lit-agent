@@ -1,8 +1,8 @@
 """用倒数排名融合合并多路检索结果。"""
 from __future__ import annotations
 
-from dataclasses import dataclass,field
-from typing import Any,Dict,List,Optional,Sequence,Tuple
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 Ranking=Sequence[Tuple[str,float]]  #一路排名的类型别名：[(key, score)]
 

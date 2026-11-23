@@ -5,7 +5,7 @@ import json
 import sys
 import time
 from pathlib import Path
-from typing import Any,Dict,List,Optional
+from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
 PROJECT_ROOT=Path(__file__).resolve().parent
@@ -13,8 +13,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0,str(PROJECT_ROOT))
 
 import streamlit as st
-
-from litagent.config import ensure_deps_on_path,get_settings
+from litagent.config import ensure_deps_on_path, get_settings
 from litagent.logging_setup import setup_logging
 
 settings=get_settings()
@@ -25,7 +24,7 @@ from litagent.index.store import Store
 from litagent.presentation import readable_text_html
 from litagent.retrieve.trace import redact_source_hint
 from litagent.schema import summary_quality
-from litagent.web_links import(
+from litagent.web_links import (
     autorun_allowed,
     build_prefill_url,
     parse_url_prefill,
@@ -44,7 +43,7 @@ st.set_page_config(
 def stretch_kwargs()->Dict[str,Any]:
     try:
         major,minor=[int(x) for x in st.__version__.split(".")[:2]]
-    except Exception:  # noqa: BLE001 版本号读不出来就按旧写法走
+    except Exception:  # noqa: BLE001
         return{"use_container_width":True}
     return{"width":"stretch"} if(major,minor)>=(1,49) else{"use_container_width":True}
 
@@ -80,7 +79,7 @@ def render_sidebar()->None:
             col2.metric("含全文",stats.get("documents_with_fulltext",0))
             col1.metric("片段",stats.get("chunks",0))
             col2.metric("结构化总结",stats.get("summaries",0))
-        except Exception as exc:  #noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             st.error("读取索引失败：%s"%exc)
 
         st.divider()
@@ -360,7 +359,7 @@ def tab_chat()->None:
                         autorun=True,
                         autorun_token=settings.url_autorun_token,
                     ))
-        except Exception as exc:  #noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             status.update(label="失败",state="error")
             st.error("调用失败：%s: %s"%(type(exc).__name__,exc))
             return
@@ -610,7 +609,7 @@ def tab_docs()->None:
             " LENGTH(COALESCE((SELECT text FROM documents_fulltext f"
             "                  WHERE f.doc_id=d.id),'')) AS ntext"
             " FROM documents d").fetchall()]
-    except Exception as exc:  #noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         st.error("读取文献列表失败：%s"%exc)
         return
     for row in rows:
@@ -732,13 +731,13 @@ def tab_docs()->None:
                 from litagent.cite.gbt7714 import format_gbt7714
 
                 st.write("**GB/T 7714**：%s"%format_gbt7714(doc.to_citation_dict()))
-            except Exception:  #noqa: BLE001
+            except Exception:  # noqa: BLE001
                 pass
 
         with st.expander("查看全文"):
             try:
                 fulltext=store.get_fulltext(doc.id) or ""
-            except Exception:  #noqa: BLE001
+            except Exception:  # noqa: BLE001
                 fulltext=""
             _render_document_content(
                 fulltext,doc.abstract or "",

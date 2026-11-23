@@ -4,18 +4,37 @@
 方便断网重放。查询进度写入 ingest_log，可以从中断处继续。单次请求
 失败只记入报告，其他查询照常执行。
 """
-from __future__ import annotations  #'annotations'让类型标注延迟求值：Py3.8 也能写'list[str]'这种新语法
+from __future__ import (
+    annotations,  #'annotations'让类型标注延迟求值：Py3.8 也能写'list[str]'这种新语法
+)
 
 import json  #'json'用于归档的 JSONL 读写，每行一条记录，追加写不会互相污染
 import time  #'time'只取两样东西：'monotonic'算耗时，'strftime'给归档文件打时间戳
-from dataclasses import dataclass,field  #'dataclass'是为了少写一堆样板，'field'专门用来给可变字段配工厂函数
+from dataclasses import (  #'dataclass'是为了少写一堆样板，'field'专门用来给可变字段配工厂函数
+    dataclass,
+    field,
+)
 from pathlib import Path  #'Path'全程走运算符拼接（'/'），不做字符串拼接，免得踩 Windows 反斜杠
-from typing import Any,Dict,Iterable,List,Optional,Sequence,Tuple  #类型名集中导入，函数签名因此能写全，读代码时不用回翻定义
+from typing import (  #类型名集中导入，函数签名因此能写全，读代码时不用回翻定义
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+)
 
-from litagent.config import Settings,settings as default_settings  #配置走单例导入并另起别名，测试里可以整个替换掉，不必改全局状态
-from litagent.fetch.base import Source,get_source  #'get_source'是数据源工厂，调度器只认'Source'这个抽象接口不认具体实现
+from litagent.config import (  #配置走单例导入并另起别名，测试里可以整个替换掉，不必改全局状态
+    Settings,
+)
+from litagent.config import settings as default_settings
+from litagent.fetch.base import (  #'get_source'是数据源工厂，调度器只认'Source'这个抽象接口不认具体实现
+    Source,
+    get_source,
+)
 from litagent.index.store import Store  #'Store'是唯一落盘入口，调度器自己不写一句 SQL
-from litagent.schema import(  #领域模型与归一化函数统一从'schema'导入，保证两边口径完全一致
+from litagent.schema import (  #领域模型与归一化函数统一从'schema'导入，保证两边口径完全一致
     Document,
     normalize_doi,
     normalize_title,
@@ -330,7 +349,7 @@ class FetchRunner:  #抓取调度器，串起去重、落库、归档和续传�
                     if on_progress:  #有回调才通知，回调是可选的，不传就不打扰调用方
                         on_progress("done",query,len(documents))
 
-                except Exception as exc:  # noqa: BLE001 单个查询失败不中断整批，兜底捕获一切异常：一个查询词炸了，剩下的查询照跑不误
+                except Exception as exc:  # noqa: BLE001
                     message="%s: %s"%(type(exc).__name__,str(exc)[:200])  #只留异常类型和前 200 字，完整堆栈会把报告撑爆
                     report.errors.append("[%s] %s"%(query,message))  #错误文本前面缀上查询词，否则一堆报错分不清是谁的
                     report.failed_queries.append(query)
@@ -431,7 +450,7 @@ class FetchRunner:  #抓取调度器，串起去重、落库、归档和续传�
                     merged=self._prefer_bibliographic(doc,found,source_name)  #合并交给专门的函数，字段级择优的逻辑集中在一处好维护
                     self.store.upsert_document(merged)  #合并结果整体写回，'upsert' 会按 ID 覆盖而不是插新记录
                     report.merged+=1  #合并成功才计数，写库失败会掉进下面的 'except'
-                except Exception as exc:  # noqa: BLE001，单条 DOI 查询失败只累加不中断，跟在线抓取一个路子
+                except Exception as exc:  # noqa: BLE001
                     report.errors.append("%s: %s"%(doc_id,str(exc)[:150]))  #错误里带上文献 ID 并截断长度，方便定位是哪一条
                     report.failed_queries.append(doc_id)  #失败的 ID 也进失败清单，调用方可以只重跑这一批
                 if on_progress:  #回调是可选参数，不传就不打扰上层
@@ -575,7 +594,7 @@ class FetchRunner:  #抓取调度器，串起去重、落库、归档和续传�
                 self.store.upsert_document(doc)  #用过的直链也留着，出问题能直接点开这个 URL 复核
                 downloaded+=1  #落库，让这次下载的路径与来源对后续步骤可见
                 report.pdfs_downloaded+=1  #成功计数在写库之后才加，写库失败会掉进下面的 except
-            except Exception as exc:  # noqa: BLE001，单篇失败只累加不抛出，跟在线抓取一样先隔离开
+            except Exception as exc:  # noqa: BLE001
                 report.pdf_failures+=1  #失败计数单独一列，成功失败在报告里一眼能分辨
                 report.errors.append("%s: %s"%(doc.short_ref(),str(exc)[:150]))  #错误里带短引用与详细信息，半天抓不到是哪一篇时能救命
             if on_progress:  #有回调才通知，回调是可选的
@@ -607,7 +626,7 @@ class FetchRunner:  #抓取调度器，串起去重、落库、归档和续传�
                 url=cache[name].pdf_url(doc)  #让数据源自己从元数据里挖直链，挖不到就返回空
                 if url:  #拿到直链就立刻返回，源名一起交出去供下载阶段使用
                     return url,name  #直链与源名一起返回，二者必须配对，不能只返回 URL
-            except Exception:  # noqa: BLE001，解析异常当没有处理，换下一个源接着试
+            except Exception:  # noqa: BLE001
                 continue  #换下一个源继续，一个源不认识这条文献很正常
         return None,""  #全试完都没有就交空值，调用方按「无直链」处理
 

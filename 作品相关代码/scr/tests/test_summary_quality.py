@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import unittest
 
-from litagent.schema import Claim,Document,Summary,summary_quality
+from litagent.schema import Claim, Document, Summary, summary_quality
 
 
 class SummaryQualityTests(unittest.TestCase):

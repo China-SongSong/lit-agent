@@ -3,13 +3,14 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any,Dict,List,Optional,Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
-from litagent.config import Settings,settings as default_settings
+from litagent.config import Settings
+from litagent.config import settings as default_settings
 from litagent.index.store import Store
-from litagent.llm.client import LLMClient,LLMError,extract_json
-from litagent.schema import Chunk,Claim,Document,Summary,content_hash,utcnow
-from litagent.summarize.prompts import(
+from litagent.llm.client import LLMClient, LLMError, extract_json
+from litagent.schema import Chunk, Claim, Document, Summary, content_hash, utcnow
+from litagent.summarize.prompts import (
     PROMPT_VERSION,  #提示词版本号，进了缓存键
     build_claims_messages,
     build_summary_messages,

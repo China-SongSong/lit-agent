@@ -9,16 +9,16 @@ from __future__ import annotations
 import argparse
 import json
 import tempfile
-from dataclasses import asdict,dataclass,field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any,Iterable,List,Optional,Sequence
+from typing import List, Optional, Sequence
 
 from litagent.clean.pipeline import CleanPipeline
 from litagent.config import Settings
 from litagent.contracts import CONTRACT_VERSION
 from litagent.index.builder import IndexBuilder
 from litagent.index.store import Store
-from litagent.retrieve.trace import DEFAULT_FOUND_THRESHOLD,QuoteTracer
+from litagent.retrieve.trace import DEFAULT_FOUND_THRESHOLD, QuoteTracer
 from litagent.schema import Document
 
 DEFAULT_THRESHOLDS=(0.60,0.64,0.68,0.70,0.72,0.74,0.76,0.80)

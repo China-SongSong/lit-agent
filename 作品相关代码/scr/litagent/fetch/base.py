@@ -11,12 +11,13 @@ import json
 import random
 import threading
 import time
-from abc import ABC,abstractmethod
+from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any,Dict,List,Optional,Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlencode
 
-from litagent.config import Settings,settings as default_settings
+from litagent.config import Settings
+from litagent.config import settings as default_settings
 from litagent.schema import Document
 
 try:  # 允许在没装 requests 的环境下仍能 import 本模块（便于静态检查）
@@ -182,7 +183,7 @@ class HttpClient:
                     proxies=self._proxies(),
                     stream=stream,
                 )
-            except Exception as exc:  # noqa: BLE001 (连接类异常统一重试)
+            except Exception as exc:  # noqa: BLE001
                 last_error=exc
                 last_retryable=True
                 if attempt>=self.max_retries:
@@ -436,8 +437,8 @@ class Source(ABC):
 
     def close(self)->None:
         try:
-            self.client._session.close()  # noqa: SLF001，绕开封装直接关底层会话，因为'HttpClient'没暴露'close'，这里只能取私有属性
-        except Exception:  # noqa: BLE001，关闭失败一律吞掉：进程退出阶段的清理动作不该再抛异常出来
+            self.client._session.close()  # noqa: SLF001
+        except Exception:  # noqa: BLE001
             pass
 
 

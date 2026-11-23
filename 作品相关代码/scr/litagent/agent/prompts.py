@@ -2,7 +2,7 @@
 #单一提示词源
 from __future__ import annotations
 
-from typing import Any,Dict,List,Optional
+from typing import Any, Dict, List, Optional
 
 PROMPT_VERSION="agent-v1"  #提示词一改就得动它
 

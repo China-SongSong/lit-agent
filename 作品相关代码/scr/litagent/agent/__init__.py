@@ -2,6 +2,8 @@
 
 loop 控制每轮行动，tools 提供可调用的文献能力，prompts 保存输出协议。
 """
-from __future__ import annotations  #把类型注解当字符串暂存、延迟求值，避免注解里引用了还没定义的名字就报错
+from __future__ import (
+    annotations,  #把类型注解当字符串暂存、延迟求值，避免注解里引用了还没定义的名字就报错
+)
 
 __all__=[]  #空列表表示本包不在包级别导出任何名字，要用就按子模块路径导入

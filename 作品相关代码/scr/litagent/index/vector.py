@@ -17,7 +17,7 @@ from array import array
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Any,Dict,Iterable,List,Optional,Sequence
+from typing import Any, Dict, List, Sequence
 
 from litagent.index.lexical import tokenize
 

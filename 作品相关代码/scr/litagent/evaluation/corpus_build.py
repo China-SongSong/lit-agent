@@ -5,9 +5,9 @@ import argparse
 import hashlib
 import json
 import sqlite3
-from datetime import datetime,timezone
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict,Optional,Sequence
+from typing import Dict, Optional, Sequence
 
 from litagent.clean.pipeline import CleanPipeline
 from litagent.config import Settings

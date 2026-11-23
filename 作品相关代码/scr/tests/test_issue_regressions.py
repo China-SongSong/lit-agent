@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from litagent.clean.chunker import chunk_text
-from litagent.config import Settings,build_settings
+from litagent.config import Settings, build_settings
 from litagent.evaluation.corpus_build import (
     logical_database_sha256,
     logical_database_table_sha256,

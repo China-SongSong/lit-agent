@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import unittest
 
-from litagent.contracts import(
+from litagent.contracts import (
     ContractViolation,
     DecisionBasis,
     OnlineAccessDenied,
@@ -12,7 +12,7 @@ from litagent.contracts import(
     SourceTier,
     validate_trace_result,
 )
-from litagent.schema import Author,Document,SearchHit,TraceResult
+from litagent.schema import Author, Document, SearchHit, TraceResult
 
 
 class ContractTests(unittest.TestCase):

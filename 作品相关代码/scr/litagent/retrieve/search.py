@@ -2,15 +2,16 @@
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass,field
-from typing import Any,Dict,List,Optional,Sequence,Tuple
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from litagent.config import Settings,settings as default_settings
+from litagent.config import Settings
+from litagent.config import settings as default_settings
 from litagent.index.hybrid import fuse_rankings
 from litagent.index.lexical import BM25Index
 from litagent.index.phrase import PhraseIndex
 from litagent.index.store import Store
-from litagent.schema import Document,SearchHit
+from litagent.schema import Document, SearchHit
 
 DEFAULT_WEIGHTS:Dict[str,float]={
     "phrase":1.6,

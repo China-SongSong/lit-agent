@@ -7,7 +7,7 @@ from pathlib import Path
 
 from litagent.evaluation.calibration import build_evaluation_store
 from litagent.index.builder import IndexBuilder
-from litagent.index.vector import NEURAL_MODEL,cosine
+from litagent.index.vector import NEURAL_MODEL, cosine
 from litagent.retrieve.trace import QuoteTracer
 
 FIXTURES=Path(__file__).resolve().parent/"fixtures"

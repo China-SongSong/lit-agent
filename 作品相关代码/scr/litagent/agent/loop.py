@@ -7,19 +7,21 @@ from __future__ import annotations
 
 import json
 import time
-from dataclasses import dataclass,field
-from typing import Any,Callable,Dict,List,Optional,Sequence
+from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
-from litagent.agent.prompts import(
+from litagent.agent.prompts import (
     PROMPT_VERSION,
     build_chat_messages,
     build_round_message,
     build_system_prompt,
 )
-from litagent.agent.tools import LiteratureTools,ToolRegistry
-from litagent.config import Settings,settings as default_settings
+from litagent.agent.tools import LiteratureTools, ToolRegistry
+from litagent.config import Settings
+from litagent.config import settings as default_settings
 from litagent.index.store import Store
-from litagent.llm.client import LLMClient,LLMError
+from litagent.llm.client import LLMClient, LLMError
+
 
 @dataclass
 class AgentStep:
@@ -297,7 +299,7 @@ class LiteratureAgent:
         """关闭底层的模型客户端，关不掉也不影响已经拿到的结果"""
         try:
             self.client.close()
-        except Exception:  #noqa: BLE001
+        except Exception:  # noqa: BLE001
             pass
 
 __all__=["LiteratureAgent","AgentResult","AgentStep","PROMPT_VERSION"]

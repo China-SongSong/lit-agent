@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass,field
-from typing import Callable,List,Optional,Sequence
+from dataclasses import dataclass, field
+from typing import Callable, List, Optional, Sequence
 
-from litagent.config import Settings,settings as default_settings
+from litagent.config import Settings
+from litagent.config import settings as default_settings
 from litagent.index.lexical import build_term_frequencies
 from litagent.index.phrase import build_fingerprints
 from litagent.index.store import Store
@@ -113,7 +114,7 @@ class IndexBuilder:
                 report.chunks_indexed+=len(chunks)
                 report.postings_written+=sum(len(v) for v in term_freqs.values())
                 report.fingerprints_written+=sum(len(v) for v in fingerprints.values())
-            except Exception as exc:  # noqa: BLE001 单篇失败不中断整批
+            except Exception as exc:  # noqa: BLE001
                 report.errors.append("%s: %s: %s"%(
                     doc_id,type(exc).__name__,str(exc)[:150]))
 

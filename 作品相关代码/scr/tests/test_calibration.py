@@ -4,7 +4,7 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from litagent.evaluation.calibration import DEFAULT_THRESHOLDS,calibrate,format_markdown
+from litagent.evaluation.calibration import DEFAULT_THRESHOLDS, calibrate, format_markdown
 
 FIXTURES=Path(__file__).resolve().parent/"fixtures"
 

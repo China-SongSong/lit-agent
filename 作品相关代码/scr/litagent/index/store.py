@@ -1,14 +1,14 @@
 """用 SQLite 保存文献、片段、索引、总结和缓存。"""
 from __future__ import annotations
-#延迟注解与标准库依赖
 
+#延迟注解与标准库依赖
 import json
 import sqlite3
 import threading
 from pathlib import Path
-from typing import Any,Dict,Iterable,Iterator,List,Optional,Sequence,Tuple
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
 
-from litagent.schema import(
+from litagent.schema import (
     Author,
     Chunk,
     Claim,

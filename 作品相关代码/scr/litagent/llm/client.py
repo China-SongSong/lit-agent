@@ -1,14 +1,16 @@
 """大模型客户端（OpenAI 兼容，默认 DeepSeek）。"""
 #模块依赖与类型
 from __future__ import annotations
+
 import json
 import random
 import re
 import time
 from dataclasses import dataclass
-from typing import Any,Dict,Iterator,List,Optional,Sequence
+from typing import Any, Dict, Iterator, List, Optional, Sequence
 
-from litagent.config import Settings,settings as default_settings
+from litagent.config import Settings
+from litagent.config import settings as default_settings
 
 #可选的第三方依赖
 try:

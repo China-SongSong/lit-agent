@@ -5,11 +5,13 @@
 """
 from __future__ import annotations
 
-import re   #全篇的清洗都是正则驱动的，没有它这层什么都做不了
-import unicodedata   #'NFKC'归一化和控制字符判定都靠它，标准库自带不用装
-from typing import List,Optional
+import re  #全篇的清洗都是正则驱动的，没有它这层什么都做不了
+import unicodedata  #'NFKC'归一化和控制字符判定都靠它，标准库自带不用装
+from typing import List, Optional
 
-from litagent.schema import REFERENCE_HEADINGS   #标题词表复用在'litagent.schema'，避免两个模块各写一份慢慢漂移
+from litagent.schema import (
+    REFERENCE_HEADINGS,  #标题词表复用在'litagent.schema'，避免两个模块各写一份慢慢漂移
+)
 
 # ---------------------------------------------------------------------------
 # 正则

@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from litagent.evaluation.calibration import build_evaluation_store,load_cases
+from litagent.evaluation.calibration import build_evaluation_store, load_cases
 from litagent.retrieve.trace import QuoteTracer
 from litagent.schema import Document
 

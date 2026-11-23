@@ -4,25 +4,31 @@
 文献则用标题和摘要组成一个可检索片段。这一步不建索引，后续调整索引
 参数时不需要重新解析 PDF。
 """
-from __future__ import annotations  #启用延迟注解：让类型标注以字符串形式保存，从而可以写前向引用而不报错
+from __future__ import (
+    annotations,  #启用延迟注解：让类型标注以字符串形式保存，从而可以写前向引用而不报错
+)
 
 import time
-from dataclasses import dataclass,field
+from dataclasses import dataclass, field
 from pathlib import Path  #从 pathlib 导入 Path，用来判断 PDF 路径是不是真实存在的文件
-from typing import Callable,List,Optional,Sequence,Tuple
+from typing import Callable, List, Optional, Sequence, Tuple
 
-from litagent.clean.chunker import chunk_stats,chunk_text
-from litagent.clean.dedupe import DedupeReport,dedupe_documents
-from litagent.clean.normalize import(  #开始从规范化模块导入多个清洗函数，左括号表示这次导入要跨多行写
+from litagent.clean.chunker import chunk_stats, chunk_text
+from litagent.clean.dedupe import DedupeReport, dedupe_documents
+from litagent.clean.normalize import (  #开始从规范化模块导入多个清洗函数，左括号表示这次导入要跨多行写
     clean_abstract,
     clean_text,
     detect_language,
     strip_references,
 )  #右括号结束这组多行导入，换成逐个导入也能跑，但这样更集中
-from litagent.clean.pdf_text import PdfExtraction,extract_pdf  #从 PDF 抽取模块导入抽取结果类型和抽取函数 extract_pdf
-from litagent.config import Settings,settings as default_settings  #从配置模块导入设置类型，并把全局 settings 改名成默认设置
+from litagent.clean.pdf_text import (  #从 PDF 抽取模块导入抽取结果类型和抽取函数 extract_pdf
+    PdfExtraction,
+    extract_pdf,
+)
+from litagent.config import Settings  #从配置模块导入设置类型，并把全局 settings 改名成默认设置
+from litagent.config import settings as default_settings
 from litagent.index.store import Store  #从索引存储模块导入 Store，它是所有数据库读写操作的门面
-from litagent.schema import Chunk,Document,content_hash,utcnow
+from litagent.schema import Chunk, Document, content_hash, utcnow
 
 
 @dataclass  #装饰器 @dataclass，让下面的类自动生成初始化方法，只写字段即可
@@ -325,7 +331,7 @@ class CleanPipeline:
                         report.from_fulltext+=1  #纯文本来源计数加一
                     else:  #剩下的都归到只有摘要的兜底那一类
                         report.from_abstract_only+=1  #仅摘要来源计数加一
-            except Exception as exc:  # noqa: BLE001 单篇失败不中断整批，捕获所有异常，行尾注释写明这样写是为了单篇失败不中断整批
+            except Exception as exc:  # noqa: BLE001
                 report.failed+=1  #失败篇数加一；注意这里不重新抛出，循环会继续往下走
                 report.errors.append("%s: %s: %s"%(  #开始拼一条错误记录，格式是文献 id 冒号异常类名冒号异常信息
                     doc.id,type(exc).__name__,str(exc)[:150]))  #异常信息截到一百五十个字符，防止超长报错把日志撑爆
@@ -333,7 +339,7 @@ class CleanPipeline:
             if on_progress:
                 try:  #用 try 把回调也包起来，回调出错不该影响正在跑的清洗
                     on_progress(index,total,doc)
-                except Exception:  # noqa: BLE001，捕获回调抛出的任何异常
+                except Exception:  # noqa: BLE001
                     pass  #直接忽略，注释表明这里是故意的静默处理
 
         if run_dedupe:

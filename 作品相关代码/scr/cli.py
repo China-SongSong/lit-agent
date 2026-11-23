@@ -5,13 +5,13 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any,Dict,List,Optional
+from typing import Any, Dict, List, Optional
 
 PROJECT_ROOT=Path(__file__).resolve().parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0,str(PROJECT_ROOT))
 
-from litagent.config import ensure_deps_on_path,get_settings
+from litagent.config import ensure_deps_on_path, get_settings
 
 settings=get_settings()
 ensure_deps_on_path(settings.deps_dir)
@@ -23,7 +23,7 @@ setup_logging(settings,component="cli")
 try:
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
-except Exception:  #noqa: BLE001
+except Exception:  # noqa: BLE001
     pass
 
 #输出助手
@@ -57,7 +57,7 @@ def print_json(data:Any)->None:
 
 def _open_store():
     """打开库；不存在时给出提示并返回 None。"""
-    from litagent.index.store import SCHEMA_VERSION,Store
+    from litagent.index.store import Store
 
     store=Store(settings.db_path)
     if not store.exists:
@@ -93,7 +93,7 @@ def cmd_doctor(args:argparse.Namespace)->int:
         print("  必需依赖齐备。")
 
     print("\n【SQLite 索引】")
-    from litagent.index.store import SCHEMA_VERSION,Store
+    from litagent.index.store import Store
 
     store=Store(settings.db_path)
     if store.exists:
@@ -109,7 +109,7 @@ def cmd_doctor(args:argparse.Namespace)->int:
                   %(stats["documents"],stats["documents_with_fulltext"],
                      stats["chunks"],stats["vocabulary"],
                      stats["fingerprints"],stats["summaries"]))
-        except Exception as exc:  #noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             print("  [WARN] 读取索引失败：%s"%exc)
     else:
         print("  尚未建库：%s"%settings.db_path)
@@ -180,7 +180,7 @@ def _probe_services(args:argparse.Namespace)->bool:
                 print("  [FAIL] %s 调用失败：%s"
                       %(settings.llm_model,result.get("error","未知原因")))
                 _print_probe_hint(result.get("error",""))
-        except Exception as exc:  #noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             failed=True
             print("  [FAIL] 初始化客户端失败：%s: %s"
                   %(type(exc).__name__,str(exc)[:200]))
@@ -220,7 +220,7 @@ def cmd_init(args:argparse.Namespace)->int:
     settings.ensure_dirs()
     print("  数据目录已就绪：%s"%settings.data_dir)
 
-    from litagent.index.store import SCHEMA_VERSION,Store
+    from litagent.index.store import SCHEMA_VERSION, Store
     from litagent.schema import utcnow
 
     store=Store(settings.db_path)

@@ -1,0 +1,11 @@
+target-version = "py312"
+line-length = 100
+respect-gitignore = true
+
+[lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[lint.per-file-ignores]
+"作品相关代码/scr/tests/**/*.py" = ["E402"]
+"作品相关代码/scr/app.py" = ["E402"]
+"作品相关代码/scr/cli.py" = ["E402"]

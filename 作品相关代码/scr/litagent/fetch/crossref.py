@@ -7,10 +7,14 @@ from __future__ import annotations
 
 import html  #导入标准库 html，后面用它的 unescape 把实体写法还原成真实字符。
 import re
-from typing import Any,Dict,Iterable,List,Optional
+from typing import Any, Dict, Iterable, List, Optional
 
-from litagent.fetch.base import Source,register_source
-from litagent.schema import Document,normalize_doi,parse_authors  #从 schema 导入文献模型、DOI 归一化函数与作者解析函数。
+from litagent.fetch.base import Source, register_source
+from litagent.schema import (  #从 schema 导入文献模型、DOI 归一化函数与作者解析函数。
+    Document,
+    normalize_doi,
+    parse_authors,
+)
 
 #注释：这张表把 Crossref 的 type 取值翻译成本项目的 venue_type。
 _TYPE_MAP={

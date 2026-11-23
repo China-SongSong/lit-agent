@@ -2,10 +2,14 @@
 from __future__ import annotations
 
 import re
-from typing import Any,Dict,List,Optional
+from typing import Any, Dict, List, Optional
 
-from litagent.fetch.base import Source,register_source
-from litagent.schema import Document,normalize_doi,parse_authors  #从 schema 导入统一文档模型和 DOI 归一化、作者解析两个工具函数
+from litagent.fetch.base import Source, register_source
+from litagent.schema import (  #从 schema 导入统一文档模型和 DOI 归一化、作者解析两个工具函数
+    Document,
+    normalize_doi,
+    parse_authors,
+)
 
 #注释：说明下面是要向接口索要的字段；字段越多响应越慢，只取用得上的
 _FIELDS=",".join([

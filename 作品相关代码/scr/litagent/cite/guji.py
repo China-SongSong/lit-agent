@@ -2,9 +2,9 @@
 """中文历史典籍（古籍）引用格式化：历史学注释体例 + GB/T 7714-2015。"""
 from __future__ import annotations
 
-import re
 import html
-from typing import Any,Dict,List,Optional
+import re
+from typing import Any, Dict, List, Optional
 
 __all__=[
     "HISTORY_NOTE_RULE",  #HISTORY_NOTE_RULE排在首位

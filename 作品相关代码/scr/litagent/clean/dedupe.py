@@ -5,11 +5,19 @@
 """
 from __future__ import annotations
 
-from dataclasses import dataclass,field   #'field'要给可变默认值配'default_factory'
-from typing import Any,Dict,Iterable,List,Optional,Sequence,Tuple   #类型提示专用
+from dataclasses import dataclass, field  #'field'要给可变默认值配'default_factory'
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple  #类型提示专用
 
-from litagent.hashing import is_near_duplicate,simhash_text   #SimHash由'hashing'统一提供，别在这里重写一份
-from litagent.schema import Document,normalize_doi,normalize_title,title_similarity   #归一化也走'schema'，两处口径必须一致
+from litagent.hashing import (  #SimHash由'hashing'统一提供，别在这里重写一份
+    is_near_duplicate,
+    simhash_text,
+)
+from litagent.schema import (  #归一化也走'schema'，两处口径必须一致
+    Document,
+    normalize_doi,
+    normalize_title,
+    title_similarity,
+)
 
 #: 标题判重阈值
 TITLE_THRESHOLD=0.92   #0.92是卡出来的：再低会把『同一课题的两篇论文』误合并（误判），再高对不了预印本改标题（漏判）

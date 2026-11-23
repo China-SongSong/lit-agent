@@ -6,7 +6,7 @@ import hmac
 import json
 import re
 from dataclasses import dataclass
-from typing import Any,Dict,Mapping,Optional
+from typing import Any, Mapping
 from urllib.parse import urlencode
 
 _CONTROL_RE=re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")

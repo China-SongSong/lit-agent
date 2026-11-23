@@ -2,7 +2,8 @@
 第三方库兼容垫片，处理不同版本导入名不同的问题
 """
 from __future__ import annotations
-from typing import Any,Optional
+
+from typing import Any, Optional
 
 _pdf_module:Any=None
 _pdf_module_resolved=False  #初值False，表示还没试过导入

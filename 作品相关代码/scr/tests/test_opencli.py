@@ -9,7 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from litagent.config import Settings
-from litagent.fetch.opencli import(
+from litagent.fetch.opencli import (
     OpenCLISource,
     chinese_metadata_query,
     exact_quote_query,

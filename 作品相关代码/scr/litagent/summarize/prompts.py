@@ -1,7 +1,7 @@
 """结构化总结和论断抽取使用的提示词。"""
 from __future__ import annotations
 
-from typing import Any,Dict,List
+from typing import Any, Dict, List
 
 #注释续：版本变了才会重新调用模型
 PROMPT_VERSION="summary-v1"

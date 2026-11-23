@@ -7,10 +7,10 @@
 from __future__ import annotations
 
 import re
-from typing import Any,Dict,List,Optional,Sequence,Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from litagent.clean.normalize import estimate_tokens
-from litagent.schema import SECTION_ALIASES,Chunk,content_hash,has_cjk
+from litagent.schema import SECTION_ALIASES, Chunk, content_hash, has_cjk
 
 #三个正则一大类，用长横线隔出视觉分区，比空行更容易扫读
 #标题识别规则

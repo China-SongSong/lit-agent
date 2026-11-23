@@ -7,11 +7,13 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import Any,Callable,Dict,List,Optional,Sequence,Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
-from litagent.config import Settings,settings as default_settings
+from litagent.config import Settings
+from litagent.config import settings as default_settings
 from litagent.index.store import Store
 from litagent.schema import summary_quality
+
 
 @dataclass
 class Tool:

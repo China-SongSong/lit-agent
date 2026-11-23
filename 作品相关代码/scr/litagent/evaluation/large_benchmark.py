@@ -16,13 +16,11 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any,Dict,Iterable,List,Optional,Sequence,Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
-from litagent.evaluation.calibration import build_evaluation_store,load_cases
-from litagent.index.store import Store
+from litagent.evaluation.calibration import build_evaluation_store, load_cases
 from litagent.retrieve.search import HybridSearcher
 from litagent.retrieve.trace import QuoteTracer
-from litagent.schema import Document
 
 BENCHMARK_VERSION="large-v1"
 DEFAULT_DOCUMENT_COUNT=10000

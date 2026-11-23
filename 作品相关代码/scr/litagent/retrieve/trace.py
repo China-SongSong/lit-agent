@@ -1,16 +1,17 @@
 """定位一段引文的来源，并给出置信度、上下文和引用。"""
 from __future__ import annotations
 
-import re
 import logging
+import re
 import time
-from concurrent.futures import ThreadPoolExecutor,wait
+from concurrent.futures import ThreadPoolExecutor, wait
 from dataclasses import dataclass
-from typing import Any,Dict,List,Optional,Tuple
-from urllib.parse import parse_qs,urlparse
+from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import parse_qs, urlparse
 
-from litagent.config import Settings,settings as default_settings
-from litagent.contracts import(
+from litagent.config import Settings
+from litagent.config import settings as default_settings
+from litagent.contracts import (
     DecisionBasis,
     OnlineRequest,
     SourceCandidate,
@@ -19,14 +20,14 @@ from litagent.contracts import(
     validate_trace_result,
 )
 from litagent.index.lexical import tokenize
-from litagent.index.phrase import PhraseIndex,exact_tokens
+from litagent.index.phrase import PhraseIndex, exact_tokens
 from litagent.index.store import Store
 from litagent.index.vector import (
     VectorHit,
     VectorIndex,
     get_embedding_encoder,
 )
-from litagent.schema import Document,SearchHit,TraceResult,has_cjk,normalize_doi
+from litagent.schema import Document, SearchHit, TraceResult, has_cjk, normalize_doi
 
 _LOG=logging.getLogger(__name__)
 _DOI_IN_TEXT_RE=re.compile(r"10\.\d{4,9}/[-._;()/:A-Z0-9]+",re.IGNORECASE)
@@ -559,7 +560,7 @@ class QuoteTracer:
                               tokenizer_cache_dir=self.settings.cache_dir)
             top=[cid for cid,_ in index.search(quote,top_k=10)]
             bm25_support=chunk_id in top
-        except Exception:  #noqa: BLE001
+        except Exception:  # noqa: BLE001
             pass
         return bm25_support
 
@@ -665,7 +666,7 @@ class QuoteTracer:
                 return source_name,list(source.search(query,limit=self.ONLINE_PER_SOURCE)),""
             finally:
                 source.close()  #放在finally里关
-        except Exception as exc:  # noqa: BLE001，单源失败只记错误串，绝不打断整批
+        except Exception as exc:  # noqa: BLE001
             from litagent.fetch.http import HttpError
 
             if isinstance(exc,HttpError):
@@ -730,7 +731,7 @@ class QuoteTracer:
         for future in done:
             try:
                 total+=len(future.result()[1])
-            except Exception:  # noqa: BLE001，取不到结果的当作没有贡献，不在这里抛
+            except Exception:  # noqa: BLE001
                 continue
         return total
 
@@ -903,7 +904,7 @@ class QuoteTracer:
                 continue
             try:
                 _,documents,error=future.result()
-            except Exception as exc:  # noqa: BLE001，取结果这一步再兜一层，防止个别源绕过内层保护
+            except Exception as exc:  # noqa: BLE001
                 errors.append("%s: %s"%(name,type(exc).__name__))
                 continue
             if error:  #源自己报的错误（多半是限流或缺密钥）照样记下来，但不影响别的源
@@ -1040,7 +1041,7 @@ class QuoteTracer:
             from litagent.cite.gbt7714 import format_gbt7714
 
             return format_gbt7714(doc.to_citation_dict())
-        except Exception:  #noqa: BLE001
+        except Exception:  # noqa: BLE001
             return ""
 
     @staticmethod

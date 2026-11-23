@@ -1,5 +1,7 @@
 # lit-agent 文献引文溯源系统
 
+[![CI](https://github.com/China-SongSong/lit-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/China-SongSong/lit-agent/actions/workflows/ci.yml)
+
 输入一段话，找出它出自本地语料库里的哪篇文献的哪一段，并给出 GB/T 7714-2015
 格式的引用。系统还提供文献检索、神经语义召回、结构化总结、对话、学科标签和
 查询历史。
@@ -212,8 +214,14 @@ pip install -r 作品相关代码/requirements.txt
 
 ## 测试
 
+安装开发依赖并运行与 CI 相同的检查：
+
 ```powershell
+python -m pip install -r requirements-dev.txt
+npm ci --prefix 作品相关代码/vendor/opencli-cli
+ruff check 作品相关代码/scr
 Set-Location 作品相关代码/scr
+python -m compileall -q app.py cli.py litagent tests
 python -B -m unittest discover -s tests -v
 ```
 
@@ -225,6 +233,8 @@ python cli.py search "图神经网络 推荐系统" --documents
 
 固定评测集位于
 [`作品相关代码/scr/data/evaluation/large_benchmark_v1`](作品相关代码/scr/data/evaluation/large_benchmark_v1)。
+
+GitHub Actions 会在 Windows、Python 3.12 环境中执行同一套 Ruff、编译和测试流程。
 
 引用前请人工核对原文。联网候选、语义候选和任何外部检索结果都不等同于已核实出处。
 

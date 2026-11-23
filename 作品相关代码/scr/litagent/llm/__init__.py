@@ -2,6 +2,8 @@
 
 模型只参与对话和结构化总结。检索与溯源使用本地索引，不调用大模型。
 """
-from __future__ import annotations  #导入未来特性 annotations，让类型注解延迟成字符串求值，可避免前向引用报错；必须放文件最前。
+from __future__ import (
+    annotations,  #导入未来特性 annotations，让类型注解延迟成字符串求值，可避免前向引用报错；必须放文件最前。
+)
 
 __all__=[]

@@ -22,6 +22,13 @@
 
 - GitHub 首页 README 增加面向新用户的完整安装、首次启动、页面操作、命令行、
   外部 URL 接入和故障排查教程。
+- 首页加入 CI 状态徽章，补充 Ruff 和 GitHub Actions 的本地复现命令。
+
+### 工程
+
+- 新增 Windows GitHub Actions 工作流，覆盖 LFS 模型、锁定依赖、OpenCLI、
+  Ruff、Python 编译和 72 项单元测试。
+- 新增 Ruff 基础规则集和精确锁版的开发依赖。
 
 ## 2026-11-22
 

@@ -1,12 +1,27 @@
 """查询 OpenAlex 文献元数据和开放获取地址。"""
-from __future__ import annotations  #'from __future__ import annotations'必须放在文件最前面，让类型标注延迟求值，循环导入时才不会炸
+from __future__ import (
+    annotations,  #'from __future__ import annotations'必须放在文件最前面，让类型标注延迟求值，循环导入时才不会炸
+)
 
 import html  #'html.unescape'专治来源名里的'&amp;'，不反转义会原样印进引用条目
 import re  #'re'只用来压连续空白，见'invert_abstract'里的说明
-from typing import Any,Dict,Iterable,List,Optional  #'Dict'/'List'这些老式写法是为了兼容不认'list[str]'的旧解释器
+from typing import (  #'Dict'/'List'这些老式写法是为了兼容不认'list[str]'的旧解释器
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+)
 
-from litagent.fetch.base import Source,register_source  #'Source'是抽象基类，'register_source'是登记装饰器，两样都得从基类取
-from litagent.schema import Document,normalize_doi,parse_authors  #'normalize_doi'负责把DOI各种写法归一化，'parse_authors'负责拆作者串
+from litagent.fetch.base import (  #'Source'是抽象基类，'register_source'是登记装饰器，两样都得从基类取
+    Source,
+    register_source,
+)
+from litagent.schema import (  #'normalize_doi'负责把DOI各种写法归一化，'parse_authors'负责拆作者串
+    Document,
+    normalize_doi,
+    parse_authors,
+)
 
 #OpenAlex 类型词表
 #: OpenAlex 的 work.type -> 本项目的 venue_type

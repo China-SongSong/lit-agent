@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import unittest
-from urllib.parse import parse_qs,urlparse
+from urllib.parse import parse_qs, urlparse
 
-from litagent.web_links import(
+from litagent.web_links import (
     autorun_allowed,
     build_prefill_url,
     parse_url_prefill,
