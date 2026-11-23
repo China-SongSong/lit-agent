@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
 import sys, inspect
-sys.path.insert(0, "C:/Users/Lenovo/Desktop/lit_agent/作品相关代码/scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.llm.client import LLMClient
 from litagent.cite.gbt7714 import format_ris, format_gbt7714
 print("chat:", inspect.signature(LLMClient.chat))

@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, os, json, sqlite3, importlib, pkgutil, traceback
-SCR = r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr"
+SCR = str(_REPO_ROOT / '作品相关代码' / 'scr')
 sys.path.insert(0, SCR)
 RES = []
 def rec(cat, name, ok, detail=""):
@@ -88,7 +92,7 @@ try:
 except Exception as e:
     rec("C", "指纹参数读取", False, e)
 
-json.dump(RES, open(os.path.join(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data", "stage1.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+json.dump(RES, open(os.path.join(str(_REPO_ROOT / '测试资产' / 'data'), "stage1.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 bad = [r for r in RES if not r["ok"]]
 print("\n== 汇总：%d 项，失败 %d ==" % (len(RES), len(bad)))
 for b in bad:

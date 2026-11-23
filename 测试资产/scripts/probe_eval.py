@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
 import sys, json, subprocess, inspect
-sys.path.insert(0, "C:/Users/Lenovo/Desktop/lit_agent/作品相关代码/scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 out = subprocess.run([sys.executable,"-B","-m","litagent.evaluation.calibration",
     "--corpus","tests/fixtures/calibration_corpus_v2.jsonl","--queries","tests/fixtures/calibration_queries_v3.jsonl",
-    "--format","json"], cwd="C:/Users/Lenovo/Desktop/lit_agent/作品相关代码/scr",
+    "--format","json"], cwd=str(_REPO_ROOT / '作品相关代码' / 'scr'),
     capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600)
 data = json.loads(out.stdout)
 print("顶层键:", list(data))

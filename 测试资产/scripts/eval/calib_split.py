@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import json
-p = r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr\data\evaluation\trace_calibration_v2.json"
+p = str(_REPO_ROOT / '作品相关代码' / 'scr' / 'data' / 'evaluation' / 'trace_calibration_v2.json')
 d = json.load(open(p, encoding="utf-8"))
 for split in ("calibration", "test"):
     print("=== %s 拆分 ===" % split)

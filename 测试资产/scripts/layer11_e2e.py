@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
 import sys, json, subprocess, statistics, time, sqlite3
-sys.path.insert(0, "C:/Users/Lenovo/Desktop/lit_agent/测试资产/scripts")
+sys.path.insert(0, str(_REPO_ROOT / '测试资产' / 'scripts'))
 from harness import Case, DATA, FakeLLM, fake_documents, temp_store
 c = Case()
-SCR = "C:/Users/Lenovo/Desktop/lit_agent/作品相关代码/scr"
+SCR = str(_REPO_ROOT / '作品相关代码' / 'scr')
 
 # CLI --help 冒烟
 for cmd in ("fetch","index","summarize","chat","trace"):

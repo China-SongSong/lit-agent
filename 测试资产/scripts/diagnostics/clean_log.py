@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sqlite3
-db = r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr\data\index.db"
+db = str(_REPO_ROOT / '作品相关代码' / 'scr' / 'data' / 'index.db')
 c = sqlite3.connect(db)
 n = c.execute("select count(*) from ingest_log where updated_at like '2026-10-29T14:09:56%'").fetchone()[0]
 print("待删除 ingest_log 行:", n)

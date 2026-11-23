@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, os, shutil, sqlite3
-sys.path.insert(0, "C:/Users/Lenovo/Desktop/lit_agent/作品相关代码/scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.config import get_settings
 from litagent.index.store import Store
 RES=[]
@@ -9,7 +13,7 @@ def rec(no, name, ok, detail=""):
     print("%-6s #%-2s %-44s %s" % ("PASS" if ok else "FAIL", no, name, str(detail)[:95]))
 
 s = get_settings()
-TMP = "C:/Users/Lenovo/Desktop/lit_agent/测试资产/data/e2e.db"
+TMP = str(_REPO_ROOT / '测试资产' / 'data' / 'e2e.db')
 for p in (TMP, TMP+"-wal", TMP+"-shm"):
     try: os.remove(p)
     except Exception: pass

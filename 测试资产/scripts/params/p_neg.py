@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import subprocess, sys, textwrap
 PY = sys.executable
 TPL = textwrap.dedent('''
     import sys, sqlite3
-    sys.path.insert(0, r"C:\\Users\\Lenovo\\Desktop\\lit_agent\\作品相关代码\\scr")
+    sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
     from litagent.config import get_settings
     from litagent.index.store import Store
     from litagent.clean.chunker import chunk_text
@@ -23,7 +27,7 @@ for name, mc in [("max_chars=-1", -1), ("max_chars=2", 2), ("max_chars=10", 10)]
         print("%-16s -> 超时（死循环）" % name)
 
 # agent_max_rounds 负数是否被夹住
-sys.path.insert(0, r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 import inspect, litagent.agent.loop as L
 src = inspect.getsource(L.LiteratureAgent.run)
 for line in src.splitlines():

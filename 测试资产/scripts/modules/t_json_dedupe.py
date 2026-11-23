@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, os, sqlite3
-sys.path.insert(0, "C:/Users/Lenovo/Desktop/lit_agent/作品相关代码/scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.config import get_settings
 from litagent.index.store import Store
 from litagent.llm.client import extract_json
@@ -27,7 +31,7 @@ rec(15, "残缺括号与无 JSON 返回 None",
     extract_json('{"a": 1') is None and extract_json('没有 JSON') is None)
 
 s = get_settings()
-TMP = "C:/Users/Lenovo/Desktop/lit_agent/测试资产/data/dedupe_copy.db"
+TMP = str(_REPO_ROOT / '测试资产' / 'data' / 'dedupe_copy.db')
 for p in (TMP, TMP+"-wal", TMP+"-shm"):
     try: os.remove(p)
     except Exception: pass

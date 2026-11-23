@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import json
-p = r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr\tests\fixtures\calibration_corpus_v2.jsonl"
+p = str(_REPO_ROOT / '作品相关代码' / 'scr' / 'tests' / 'fixtures' / 'calibration_corpus_v2.jsonl')
 docs = [json.loads(l) for l in open(p, encoding="utf-8") if l.strip()]
 print("语料文档数:", len(docs))
 for d in docs:

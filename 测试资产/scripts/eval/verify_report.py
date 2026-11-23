@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 from docx import Document
 import re, os
-p = r"C:\Users\Lenovo\Desktop\lit-agent 系统测试报告.docx"
+p = str(_REPO_ROOT.parent / 'lit-agent 系统测试报告.docx')
 d = Document(p)
 paras = [x.text for x in d.paragraphs]
 allt = "\n".join(paras) + "\n" + "\n".join(" | ".join(c.text for c in r.cells) for t in d.tables for r in t.rows)

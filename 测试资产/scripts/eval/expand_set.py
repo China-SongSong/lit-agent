@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import json, re, os, random
-FX = r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr\tests\fixtures"
+FX = str(_REPO_ROOT / '作品相关代码' / 'scr' / 'tests' / 'fixtures')
 corpus = [json.loads(l) for l in open(os.path.join(FX,"calibration_corpus_v2.jsonl"), encoding="utf-8") if l.strip()]
 old = [json.loads(l) for l in open(os.path.join(FX,"calibration_queries_v2.jsonl"), encoding="utf-8") if l.strip()]
 print("原有查询 %d 条，语料 %d 篇" % (len(old), len(corpus)))

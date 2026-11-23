@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, sqlite3, random, re
-sys.path.insert(0, r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.config import get_settings
 from litagent.index.store import Store
 import litagent.retrieve.trace as T

@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, sqlite3, copy, os
-sys.path.insert(0, r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.config import get_settings
 from litagent.index.store import Store
 import litagent.retrieve.trace as T
@@ -46,7 +50,7 @@ for th in (0.40,0.50,0.60,0.68,0.72,0.76,0.80,0.85,0.90,0.95):
     print("%-6.2f %-4d %-4d %-4d %-4d %-9.3f %.3f" % (th,tp,fp,fn,tn,p,r))
 
 print("\n=== SHORT_EXACT_MIN_TOKENS 对中文短句的作用 ===")
-TMP = r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data\zhp.db"
+TMP = str(_REPO_ROOT / '测试资产' / 'data' / 'zhp.db')
 for p in (TMP,TMP+"-wal",TMP+"-shm"):
     try: os.remove(p)
     except Exception: pass

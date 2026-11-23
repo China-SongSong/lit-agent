@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, time, json, sqlite3
-sys.path.insert(0, r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.config import get_settings
 from litagent.index.store import Store
 from litagent.agent.loop import LiteratureAgent
@@ -31,7 +35,7 @@ for i, q in enumerate(qs, 1):
 after = counts()
 print("\n测试后: 文献=%d 片段=%d" % after)
 print("数据库是否被写入:", "否（未变）" if after == before else "是（%+d 篇）" % (after[0]-before[0]))
-json.dump(dict(before=before, after=after, runs=out), open(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data\retest_agent.json","w",encoding="utf-8"), ensure_ascii=False, indent=1)
+json.dump(dict(before=before, after=after, runs=out), open(str(_REPO_ROOT / '测试资产' / 'data' / 'retest_agent.json'),"w",encoding="utf-8"), ensure_ascii=False, indent=1)
 for o in out:
     print("\n--- Q%s ---" % o.get("i"))
     print((o.get("ans") or o.get("err") or "")[:260])

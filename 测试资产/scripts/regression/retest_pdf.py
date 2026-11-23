@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, sqlite3, re, os
-sys.path.insert(0, r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.config import get_settings
 from litagent.index.store import Store
 from litagent.retrieve.trace import QuoteTracer
@@ -51,7 +55,7 @@ def make_pdf(path, text, pages=1):
             y += 14
     d.save(path); d.close()
 
-tmpdir = r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data\pdfs"
+tmpdir = str(_REPO_ROOT / '测试资产' / 'data' / 'pdfs')
 os.makedirs(tmpdir, exist_ok=True)
 sparse = os.path.join(tmpdir, "sparse.pdf")
 dense = os.path.join(tmpdir, "dense.pdf")

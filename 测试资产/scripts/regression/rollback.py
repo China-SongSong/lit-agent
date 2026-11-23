@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, sqlite3, os, glob, datetime
-sys.path.insert(0, r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.config import get_settings
 from litagent.index.store import Store
 s = get_settings(); store = Store(s.db_path); store.init_schema()
@@ -31,7 +35,7 @@ print("integrity:", c.execute("pragma integrity_check").fetchone()[0])
 c.close()
 
 print("\n今日新增的数据文件:")
-base = r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr\data"
+base = str(_REPO_ROOT / '作品相关代码' / 'scr' / 'data')
 today = datetime.date(2026,10,29)
 for sub in ("raw","pdfs","clean","summaries"):
     p = os.path.join(base, sub)

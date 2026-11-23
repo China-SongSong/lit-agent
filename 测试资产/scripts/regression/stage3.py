@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, os, json, shutil, sqlite3, tempfile, traceback
-sys.path.insert(0, r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.config import get_settings
 from litagent.index.store import Store
 
@@ -84,7 +88,7 @@ except Exception as e:
     rec("I", "只读连接拒绝写入（Issues#14）", False, e)
 
 # ---------- J. 删除的事务性（在副本上做） ----------
-tmpdb = os.path.join(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data", "copy.db")
+tmpdb = os.path.join(str(_REPO_ROOT / '测试资产' / 'data'), "copy.db")
 try:
     store._conn.close() if hasattr(store, "_conn") else None
 except Exception:
@@ -113,7 +117,7 @@ finally:
         try: os.remove(p)
         except Exception: pass
 
-json.dump(RES, open(os.path.join(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data", "stage3.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+json.dump(RES, open(os.path.join(str(_REPO_ROOT / '测试资产' / 'data'), "stage3.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 bad = [r for r in RES if not r["ok"]]
 print("\n== 汇总：%d 项，失败 %d ==" % (len(RES), len(bad)))
 for b in bad: print("  FAIL:", b["cat"], b["name"], b["detail"][:120])

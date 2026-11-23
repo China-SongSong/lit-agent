@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, os, json, sqlite3, time, threading
-sys.path.insert(0, r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.config import get_settings
 from litagent.index.store import Store
 from litagent.retrieve.trace import QuoteTracer
@@ -103,4 +107,4 @@ rec("性能", "溯源耗时随输入增长可控（<500ms @12000字）", perf[-1
 fails = [r for r in RES if not r["ok"]]
 print("\n== 第二轮A：%d 项，失败 %d ==" % (len(RES), len(fails)))
 for f in fails: print("  FAIL:", f["cat"], f["name"], f["detail"][:130])
-json.dump(RES, open(os.path.join(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data","round2a.json"),"w",encoding="utf-8"), ensure_ascii=False, indent=1)
+json.dump(RES, open(os.path.join(str(_REPO_ROOT / '测试资产' / 'data'),"round2a.json"),"w",encoding="utf-8"), ensure_ascii=False, indent=1)

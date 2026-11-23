@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, os, sqlite3, json, time, traceback
-sys.path.insert(0, r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.config import get_settings
 from litagent.index.store import Store
 from litagent.retrieve.trace import QuoteTracer
@@ -12,7 +16,7 @@ def rec(cat, name, ok, detail=""):
     print("%-6s [%s] %-40s %s" % ("PASS" if ok else "FAIL", cat, name, str(detail)[:110]))
 
 s = get_settings()
-tmp = os.path.join(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data", "del_copy.db")
+tmp = os.path.join(str(_REPO_ROOT / '测试资产' / 'data'), "del_copy.db")
 for p in (tmp, tmp+"-wal", tmp+"-shm"):
     try: os.remove(p)
     except Exception: pass
@@ -72,7 +76,7 @@ rec("索引重建", "重建后溯源功能正常", isinstance(r2.level, str) and
 # 总结导出
 try:
     from litagent.summarize.runner import SummaryRunner
-    out = os.path.join(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data", "export_test.jsonl")
+    out = os.path.join(str(_REPO_ROOT / '测试资产' / 'data'), "export_test.jsonl")
     path = SummaryRunner(store, s).export_summaries(path=out)
     with open(path, encoding="utf-8") as f:
         n = sum(1 for _ in f)

@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
 import sys, json, inspect
-sys.path.insert(0, "C:/Users/Lenovo/Desktop/lit_agent/测试资产/scripts")
+sys.path.insert(0, str(_REPO_ROOT / '测试资产' / 'scripts'))
 from harness import Case, DATA, FakeLLM, temp_store
 c = Case()
 from litagent.config import get_settings
@@ -89,7 +93,6 @@ for p in (TMP, TMP+"-wal", TMP+"-shm"):
     try: os.remove(p)
     except Exception: pass
 src = sqlite3.connect(str(s.db_path)); dst = sqlite3.connect(TMP); src.backup(dst); dst.close(); src.close()
-from pathlib import Path
 h0 = logical_database_sha256(Path(TMP))
 con = sqlite3.connect(TMP)
 con.execute("update summaries set tldr='__x__' where rowid=1"); con.execute("update meta set value='999' where key='schema_version'")
@@ -106,7 +109,7 @@ for p in (TMP, TMP+"-wal", TMP+"-shm"):
 # 校准混淆矩阵对拍（用报告行重算）
 out = __import__("subprocess").run([sys.executable,"-B","-m","litagent.evaluation.calibration",
         "--corpus","tests/fixtures/calibration_corpus_v2.jsonl","--queries","tests/fixtures/calibration_queries_v3.jsonl",
-        "--format","json"], cwd="C:/Users/Lenovo/Desktop/lit_agent/作品相关代码/scr",
+        "--format","json"], cwd=str(_REPO_ROOT / '作品相关代码' / 'scr'),
         capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600)
 try:
     data = json.loads(out.stdout)

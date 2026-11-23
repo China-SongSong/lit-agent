@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, os
-SCR = r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr"
+SCR = str(_REPO_ROOT / '作品相关代码' / 'scr')
 sys.path.insert(0, SCR); os.chdir(SCR)
 from streamlit.testing.v1 import AppTest
 RES = []
@@ -12,7 +16,7 @@ at = AppTest.from_file(os.path.join(SCR, "app.py"), default_timeout=180)
 at.run()
 rec("应用无异常启动", not at.exception, [e.value for e in at.exception][:1])
 rec("页签数量", len(at.tabs) >= 3, "tabs=%d" % len(at.tabs))
-quote = open(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data\quote.txt", encoding="utf-8").read().strip()
+quote = open(str(_REPO_ROOT / '测试资产' / 'data' / 'quote.txt'), encoding="utf-8").read().strip()
 at.text_area[0].set_value(quote).run()
 idx = [i for i, b in enumerate(at.button) if "开始溯源" in str(b.label)]
 rec("存在开始溯源按钮", bool(idx), [str(b.label) for b in at.button][:6])

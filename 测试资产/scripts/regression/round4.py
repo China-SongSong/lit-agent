@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, sqlite3, time, statistics, os, traceback
-sys.path.insert(0, r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.config import get_settings
 from litagent.index.store import Store
 from litagent.retrieve.trace import QuoteTracer
@@ -48,7 +52,7 @@ rec("性能", "非原样短查询不再走全量扫描", all(bench(q) < 60 for q
 
 # --- 总结合并保护 ---
 print("\n--- 总结合并保护 ---")
-tmp = os.path.join(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data", "merge_copy.db")
+tmp = os.path.join(str(_REPO_ROOT / '测试资产' / 'data'), "merge_copy.db")
 for p in (tmp, tmp+"-wal", tmp+"-shm"):
     try: os.remove(p)
     except Exception: pass

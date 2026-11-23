@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
-import sys, json, sqlite3, subprocess
+
 from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
+import sys, json, sqlite3, subprocess
 from collections import Counter
-sys.path.insert(0, "C:/Users/Lenovo/Desktop/lit_agent/作品相关代码/scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.config import get_settings
 from litagent.index.store import Store
 from litagent.evaluation.corpus_build import logical_database_sha256, logical_database_table_sha256
@@ -14,7 +17,7 @@ def rec(no, name, ok, detail=""):
     print("%-6s #%-3s %-40s %s" % ("PASS" if ok else "FAIL", no, name, str(detail)[:95]))
 
 s = get_settings()
-SCR = Path("C:/Users/Lenovo/Desktop/lit_agent/作品相关代码/scr")
+SCR = Path(str(_REPO_ROOT / '作品相关代码' / 'scr'))
 
 # 1) 基线 v3
 v3 = json.load(open(SCR/"tests/fixtures/production_baseline_v3.json", encoding="utf-8"))

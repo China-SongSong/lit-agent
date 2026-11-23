@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, os, json, sqlite3, importlib, pkgutil, re, copy, time, traceback
-sys.path.insert(0, r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 RES = []
 def rec(cat, name, ok, detail=""):
     RES.append(dict(cat=cat, name=name, ok=bool(ok), detail=str(detail)[:260]))
@@ -108,7 +112,7 @@ full = sum(1 for r in rows if all(x and str(x).strip() for x in r))
 empty = sum(1 for r in rows if not any(x and str(x).strip() for x in r))
 rec("总结", "结构化字段完整度", full == len(rows), "共 %d 篇：完整 %d、全空 %d" % (len(rows), full, empty))
 
-json.dump(RES, open(os.path.join(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data", "retest_core.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+json.dump(RES, open(os.path.join(str(_REPO_ROOT / '测试资产' / 'data'), "retest_core.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 bad2 = [r for r in RES if not r["ok"]]
 print("\n== 核心：%d 项，失败 %d ==" % (len(RES), len(bad2)))
 for b in bad2: print("  FAIL:", b["cat"], b["name"], b["detail"][:130])

@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
-import sys, json, math, sqlite3
+
 from pathlib import Path
-sys.path.insert(0, "C:/Users/Lenovo/Desktop/lit_agent/测试资产/scripts")
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
+import sys, json, math, sqlite3
+sys.path.insert(0, str(_REPO_ROOT / '测试资产' / 'scripts'))
 from harness import Case, DATA, temp_store
 c = Case()
 from litagent.schema import Document, Author, Chunk, Summary

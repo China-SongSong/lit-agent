@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
-import sys, tempfile, json
+
 from pathlib import Path
-sys.path.insert(0, r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr")
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
+import sys, tempfile, json
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.evaluation.calibration import load_corpus, load_cases, build_evaluation_store
 from litagent.retrieve.trace import QuoteTracer
 
-FX = Path(r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr\tests\fixtures")
+FX = Path(str(_REPO_ROOT / '作品相关代码' / 'scr' / 'tests' / 'fixtures'))
 work = Path(tempfile.mkdtemp(prefix="ev_"))
 store, settings = build_evaluation_store(FX/"calibration_corpus_v2.jsonl", work)
 tr = QuoteTracer(store, settings)

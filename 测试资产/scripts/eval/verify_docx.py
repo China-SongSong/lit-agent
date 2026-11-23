@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 from docx import Document
 import re, os
-p = r"C:\Users\Lenovo\Desktop\lit-agent 系统测试报告.docx"
-md = open(r"C:\Users\Lenovo\Desktop\lit_agent\Issues.md", encoding="utf-8").read()
+p = str(_REPO_ROOT.parent / 'lit-agent 系统测试报告.docx')
+md = open(str(_REPO_ROOT / 'Issues.md'), encoding="utf-8").read()
 d = Document(p)
 paras = [x.text for x in d.paragraphs if x.text.strip()]
 txt = "\n".join(paras)

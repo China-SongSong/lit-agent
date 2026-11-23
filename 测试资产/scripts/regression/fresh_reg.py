@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, os, json, sqlite3, re, copy, importlib, pkgutil
-SCR = r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr"
+SCR = str(_REPO_ROOT / '作品相关代码' / 'scr')
 sys.path.insert(0, SCR)
 RES = []
 def rec(cat, name, ok, detail=""):
@@ -156,4 +160,4 @@ con.close()
 fails2=[x for x in RES if not x["ok"]]
 print("\n== 回归：%d 项，失败 %d ==" % (len(RES), len(fails2)))
 for f in fails2: print("  FAIL:", f["cat"], f["name"], f["detail"][:120])
-json.dump(RES, open(os.path.join(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data","fresh_regression.json"),"w",encoding="utf-8"), ensure_ascii=False, indent=1)
+json.dump(RES, open(os.path.join(str(_REPO_ROOT / '测试资产' / 'data'),"fresh_regression.json"),"w",encoding="utf-8"), ensure_ascii=False, indent=1)

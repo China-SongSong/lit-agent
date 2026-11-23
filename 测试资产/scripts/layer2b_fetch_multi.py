@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
 import sys, json, glob
-sys.path.insert(0, "C:/Users/Lenovo/Desktop/lit_agent/测试资产/scripts")
+sys.path.insert(0, str(_REPO_ROOT / '测试资产' / 'scripts'))
 from harness import Case, DATA, temp_store
 c = Case()
 from litagent.fetch.base import Source, register_source

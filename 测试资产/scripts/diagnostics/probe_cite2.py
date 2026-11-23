@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys
-sys.path.insert(0, "C:/Users/Lenovo/Desktop/lit_agent/作品相关代码/scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.cite.guji import format_history_note, format_gbt7714_guji, _circled
 guji = {"id":"g1","book_title":"史记","chapter_title":"项羽本纪","chapter_index":"7",
         "authors":[{"family":"司马迁","given":""}],"year":"1959","publisher":"中华书局",

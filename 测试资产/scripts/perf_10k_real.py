@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
-import sys, time, json, tempfile, shutil, statistics, sqlite3, random
+
 from pathlib import Path
-sys.path.insert(0, "C:/Users/Lenovo/Desktop/lit_agent/测试资产/scripts")
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
+import sys, time, json, tempfile, shutil, statistics, sqlite3, random
+sys.path.insert(0, str(_REPO_ROOT / '测试资产' / 'scripts'))
 from harness import DATA
 from litagent.config import get_settings
 from litagent.index.store import Store

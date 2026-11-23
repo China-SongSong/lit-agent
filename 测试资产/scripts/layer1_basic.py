@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
-import sys, os, json, subprocess, inspect, tempfile, shutil
+
 from pathlib import Path
-sys.path.insert(0, "C:/Users/Lenovo/Desktop/lit_agent/测试资产/scripts")
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
+import sys, os, json, subprocess, inspect, tempfile, shutil
+sys.path.insert(0, str(_REPO_ROOT / '测试资产' / 'scripts'))
 from harness import Case, SCR, DATA, make_pdf_fixtures, temp_store, fake_documents
 
 c = Case()

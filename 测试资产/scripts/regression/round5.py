@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, sqlite3, time, statistics, copy
-sys.path.insert(0, r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.config import get_settings
 from litagent.index.store import Store
 from litagent.retrieve.trace import QuoteTracer
@@ -64,7 +68,7 @@ except Exception as e:
 import subprocess
 g = subprocess.run([sys.executable, "-c",
   "import re,sys; s=open(r'%s','r',encoding='utf-8').read(); print(len(re.findall('validate_trace_result', s)))"
-  % (r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr\litagent\retrieve\trace.py")],
+  % (str(_REPO_ROOT / '作品相关代码' / 'scr' / 'litagent' / 'retrieve' / 'trace.py'))],
   capture_output=True, text=True)
 rec("契约", "溯源路径接入契约校验", g.stdout.strip() not in ("0", ""), "trace.py 中出现 %s 次" % g.stdout.strip())
 
@@ -88,7 +92,7 @@ rec("性能", "空白归一化短查询", bench(norm) < 30, "%.2f ms" % bench(no
 
 # --- 评测语料 v2 ---
 try:
-    c2 = sqlite3.connect(r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr\data\evaluation\corpus_v2\index.db")
+    c2 = sqlite3.connect(str(_REPO_ROOT / '作品相关代码' / 'scr' / 'data' / 'evaluation' / 'corpus_v2' / 'index.db'))
     print("\n--- 评测语料 v2 ---")
     print("   文献=%d 片段=%d 含全文=%d 指纹=%d" % (
         c2.execute("select count(*) from documents").fetchone()[0],

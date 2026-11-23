@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 """测试基建：假 LLM、假数据源、临时库、金样例、迷你 PDF。"""
-import sys, os, json, tempfile, shutil, sqlite3
+
 from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
+import sys, os, json, tempfile, shutil, sqlite3
 from contextlib import contextmanager
 
-SCR = r"C:/Users/Lenovo/Desktop/lit_agent/作品相关代码/scr"
+SCR = str(_REPO_ROOT / '作品相关代码' / 'scr')
 if SCR not in sys.path:
     sys.path.insert(0, SCR)
-DATA = Path("C:/Users/Lenovo/Desktop/lit_agent/测试资产/data")
+DATA = Path(str(_REPO_ROOT / '测试资产' / 'data'))
 DATA.mkdir(parents=True, exist_ok=True)
 
 from litagent.llm.client import LLMUsage, LLMError

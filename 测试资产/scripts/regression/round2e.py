@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, os, shutil, sqlite3
-BASE = r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr"
-TMPDATA = r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data\data_copy"
+BASE = str(_REPO_ROOT / '作品相关代码' / 'scr')
+TMPDATA = str(_REPO_ROOT / '测试资产' / 'data' / 'data_copy')
 if os.path.isdir(TMPDATA): shutil.rmtree(TMPDATA, ignore_errors=True)
 os.makedirs(TMPDATA)
 for sub in ("raw","clean","pdfs","summaries","cache"):

@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, os, sqlite3, time, traceback
-sys.path.insert(0, r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.config import get_settings
 from litagent.index.store import Store
 from litagent.retrieve.trace import QuoteTracer
@@ -15,7 +19,7 @@ def rec(cat, name, ok, detail=""):
 s = get_settings()
 
 # --- 1. 重建后溯源（用存活文献，在副本上） ---
-tmp = os.path.join(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data", "rb.db")
+tmp = os.path.join(str(_REPO_ROOT / '测试资产' / 'data'), "rb.db")
 for p in (tmp, tmp+"-wal", tmp+"-shm"):
     try: os.remove(p)
     except Exception: pass
@@ -38,7 +42,7 @@ for p in (tmp, tmp+"-wal", tmp+"-shm"):
     except Exception: pass
 
 # --- 2. 空数据库上的健壮性 ---
-empty = os.path.join(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data", "empty.db")
+empty = os.path.join(str(_REPO_ROOT / '测试资产' / 'data'), "empty.db")
 for p in (empty, empty+"-wal", empty+"-shm"):
     try: os.remove(p)
     except Exception: pass

@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import re, os
 from docx import Document
 from docx.shared import Pt, Cm, RGBColor
@@ -7,8 +11,8 @@ from docx.enum.section import WD_SECTION
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
-SRC = r"C:\Users\Lenovo\Desktop\lit_agent\Issues.md"
-OUT = r"C:\Users\Lenovo\Desktop\lit-agent 系统测试报告.docx"
+SRC = str(_REPO_ROOT / 'Issues.md')
+OUT = str(_REPO_ROOT.parent / 'lit-agent 系统测试报告.docx')
 CN = "微软雅黑"
 NAVY = RGBColor(0x1F,0x3A,0x66); BLUE = RGBColor(0x2E,0x5C,0x8A); GREY = RGBColor(0x66,0x66,0x66)
 

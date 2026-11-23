@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, os, sqlite3, traceback
-sys.path.insert(0, r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.config import get_settings
 from litagent.index.store import Store
 from litagent.index.builder import IndexBuilder
@@ -16,7 +20,7 @@ def rec(cat, name, ok, detail=""):
 s = get_settings()
 
 # ---------- 中文短句（回归：4 字） ----------
-TMP = os.path.join(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data", "zh2.db")
+TMP = os.path.join(str(_REPO_ROOT / '测试资产' / 'data'), "zh2.db")
 for p in (TMP, TMP+"-wal", TMP+"-shm"):
     try: os.remove(p)
     except Exception: pass
@@ -63,7 +67,7 @@ except Exception as e:
     rec("边界", "只读连接拒绝写入（回归）", False, e)
 
 # ---------- 删除 ----------
-tmp = os.path.join(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data", "copy2.db")
+tmp = os.path.join(str(_REPO_ROOT / '测试资产' / 'data'), "copy2.db")
 for p in (tmp, tmp+"-wal", tmp+"-shm"):
     try: os.remove(p)
     except Exception: pass

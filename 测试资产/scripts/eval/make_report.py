@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 from docx import Document
 from docx.shared import Pt, Cm, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -7,7 +11,7 @@ from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
 CN = "微软雅黑"
-OUT = r"C:\Users\Lenovo\Desktop\lit-agent 系统测试报告.docx"
+OUT = str(_REPO_ROOT.parent / 'lit-agent 系统测试报告.docx')
 NAVY = RGBColor(0x1F,0x3A,0x66); BLUE = RGBColor(0x2E,0x5C,0x8A)
 GREY = RGBColor(0x66,0x66,0x66); RED = RGBColor(0xB3,0x2D,0x2D)
 GREEN = RGBColor(0x1E,0x6B,0x3A); AMBER = RGBColor(0x8A,0x5A,0x10)
@@ -255,7 +259,7 @@ TBL(["脚本", "用途"],
      ["stage6_zh.py", "合成中文语料验证短句指纹命中"],
      ["rollback.py / clean_log.py", "回滚 Agent 抓取产生的数据"]],
     [5.6, 10.6])
-P("脚本位于 C:/Users/Lenovo/Desktop/lit_agent/测试资产/data\\，全部只读调用项目模块，未修改 lit_agent 中的任何源码。",
+P("脚本位于仓库的 测试资产/data 目录，全部只读调用项目模块，未修改 lit_agent 中的任何源码。",
   9.5, False, GREY)
 
 doc.save(OUT)

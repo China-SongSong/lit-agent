@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, subprocess, sqlite3
-sys.path.insert(0, "C:/Users/Lenovo/Desktop/lit_agent/作品相关代码/scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 RES=[]
 def rec(no, name, ok, detail=""):
     RES.append(dict(no=no, name=name, ok=bool(ok), detail=str(detail)[:300]))
@@ -8,7 +12,7 @@ def rec(no, name, ok, detail=""):
 
 # 23 基线门禁
 out = subprocess.run([sys.executable,"-B","-m","unittest","tests.test_production_baseline","-v"],
-                     cwd="C:/Users/Lenovo/Desktop/lit_agent/作品相关代码/scr",
+                     cwd=str(_REPO_ROOT / '作品相关代码' / 'scr'),
                      capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300)
 rec("23", "生产基线哈希不漂移", out.returncode==0 and "OK" in (out.stderr or ""),
     (out.stderr or "").strip().splitlines()[-1][:80] if (out.stderr or "").strip() else str(out.returncode))

@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, time, json
-sys.path.insert(0, r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.config import get_settings
 from litagent.index.store import Store
 from litagent.agent.loop import LiteratureAgent
@@ -24,5 +28,5 @@ for i, q in enumerate(qs, 1):
         out.append(dict(q=q[:40], err=str(e)[:150])); print("Q%d EXC %s" % (i, str(e)[:120]), flush=True)
     finally:
         ag.close()
-json.dump(out, open(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data\agent.json","w",encoding="utf-8"), ensure_ascii=False, indent=1)
+json.dump(out, open(str(_REPO_ROOT / '测试资产' / 'data' / 'agent.json'),"w",encoding="utf-8"), ensure_ascii=False, indent=1)
 print("DONE")

@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, os
-SCR = r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr"
+SCR = str(_REPO_ROOT / '作品相关代码' / 'scr')
 sys.path.insert(0, SCR); os.chdir(SCR)
 from streamlit.testing.v1 import AppTest
 at = AppTest.from_file(os.path.join(SCR, "app.py"), default_timeout=120)
 at.run()
-quote = open(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data\quote.txt", encoding="utf-8").read().strip()
+quote = open(str(_REPO_ROOT / '测试资产' / 'data' / 'quote.txt'), encoding="utf-8").read().strip()
 print("text_area 数量:", len(at.text_area))
 at.text_area[0].set_value(quote).run()
 print("按钮:", [str(b.label) for b in at.button])

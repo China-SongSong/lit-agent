@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, os, traceback
-SCR = r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr"
+SCR = str(_REPO_ROOT / '作品相关代码' / 'scr')
 sys.path.insert(0, SCR)
 os.chdir(SCR)
 from streamlit.testing.v1 import AppTest
@@ -24,7 +28,7 @@ try:
     except Exception as e:
         rec("侧边栏可见", False, e)
     # 触发溯源：填入文本并点击
-    quote = open(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data\quote.txt", encoding="utf-8").read().strip()
+    quote = open(str(_REPO_ROOT / '测试资产' / 'data' / 'quote.txt'), encoding="utf-8").read().strip()
     if len(at.text_area):
         at.text_area[0].set_value(quote)
         at.run()

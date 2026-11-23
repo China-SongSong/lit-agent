@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, os, json, sqlite3, copy, time, traceback
-sys.path.insert(0, r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.config import get_settings
 from litagent.index.store import Store
 from litagent.retrieve.trace import QuoteTracer
@@ -75,7 +79,7 @@ rec("DEF-010", "弱命中时联网候选未被抑制",
     "联网=%s 候选=%d err=%s 耗时%.1fs" % (rpw.online_queried, len(rw.online_candidates), (rpw.online_error or "")[:60], dt))
 
 # ============ DEF-011 压缩率统计口径 ============
-tmp = os.path.join(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data", "clean_copy.db")
+tmp = os.path.join(str(_REPO_ROOT / '测试资产' / 'data'), "clean_copy.db")
 for p in (tmp, tmp+"-wal", tmp+"-shm"):
     try: os.remove(p)
     except Exception: pass
@@ -108,7 +112,7 @@ finally:
         except Exception: pass
 
 # ============ DEF-001 summarize --limit 计数 ============
-tmp2 = os.path.join(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data", "sum_copy.db")
+tmp2 = os.path.join(str(_REPO_ROOT / '测试资产' / 'data'), "sum_copy.db")
 for p in (tmp2, tmp2+"-wal", tmp2+"-shm"):
     try: os.remove(p)
     except Exception: pass
@@ -151,4 +155,4 @@ finally:
 fails = [r for r in RES if not r["ok"]]
 print("\n== 未验证项补测：%d 项，失败 %d ==" % (len(RES), len(fails)))
 for f in fails: print("  FAIL:", f["item"], f["name"], f["detail"][:140])
-json.dump(RES, open(os.path.join(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data","retest_unverified.json"),"w",encoding="utf-8"), ensure_ascii=False, indent=1)
+json.dump(RES, open(os.path.join(str(_REPO_ROOT / '测试资产' / 'data'),"retest_unverified.json"),"w",encoding="utf-8"), ensure_ascii=False, indent=1)

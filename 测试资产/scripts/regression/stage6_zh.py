@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, os, sqlite3, traceback
-sys.path.insert(0, r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.config import get_settings
 from litagent.index.store import Store
 from litagent.index.builder import IndexBuilder
@@ -8,7 +12,7 @@ from litagent.clean.chunker import chunk_text
 from litagent.schema import Document, Author
 from litagent.retrieve.trace import QuoteTracer
 
-TMP = os.path.join(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data", "zh.db")
+TMP = os.path.join(str(_REPO_ROOT / '测试资产' / 'data'), "zh.db")
 for p in (TMP, TMP+"-wal", TMP+"-shm"):
     try: os.remove(p)
     except Exception: pass

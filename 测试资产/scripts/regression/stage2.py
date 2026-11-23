@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, os, json, sqlite3, re, traceback
-sys.path.insert(0, r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.config import get_settings
 from litagent.index.store import Store
 from litagent.retrieve.trace import QuoteTracer
@@ -116,7 +120,7 @@ try:
 except Exception as e:
     rec("F", "作者名含 HTML 标签 → 引文不含标签", False, e)
 
-json.dump(RES, open(os.path.join(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data", "stage2.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+json.dump(RES, open(os.path.join(str(_REPO_ROOT / '测试资产' / 'data'), "stage2.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 bad = [r for r in RES if not r["ok"]]
 print("\n== 汇总：%d 项，失败 %d ==" % (len(RES), len(bad)))
 for b in bad: print("  FAIL:", b["cat"], b["name"], b["detail"][:100])

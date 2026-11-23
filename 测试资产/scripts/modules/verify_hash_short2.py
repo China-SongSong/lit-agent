@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
-import sys, os, sqlite3, shutil, time, statistics
+
 from pathlib import Path
-sys.path.insert(0, r"C:\Users\Lenovo\Desktop\lit_agent\作品相关代码\scr")
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
+import sys, os, sqlite3, shutil, time, statistics
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.config import get_settings
 from litagent.index.store import Store
 from litagent.retrieve.trace import QuoteTracer
@@ -12,7 +15,7 @@ def rec(name, ok, detail=""):
     print("%-6s %-40s %s" % ("PASS" if ok else "FAIL", name, str(detail)[:110]))
 
 s = get_settings()
-TMP = Path(r"C:/Users/Lenovo/Desktop/lit_agent/测试资产/data\hash_copy.db")
+TMP = Path(str(_REPO_ROOT / '测试资产' / 'data' / 'hash_copy.db'))
 for p in (TMP, Path(str(TMP)+"-wal"), Path(str(TMP)+"-shm")):
     try: os.remove(p)
     except Exception: pass

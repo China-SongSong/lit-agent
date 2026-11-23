@@ -61,6 +61,11 @@ dsf工作区/
 测试资产/data/
 /int q.py
 
+# 本地验收资料与临时验收脚本
+/上线验收报告.md
+/测试资产/scripts/accept_*.py
+/测试资产/scripts/probe_ops.py
+
 
 #——————————Node 依赖——————————
 **/node_modules/

@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, subprocess, json
-sys.path.insert(0, "C:/Users/Lenovo/Desktop/lit_agent/作品相关代码/scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.cite.gbt7714 import format_gbt7714
 from litagent.cite.guji import format_history_note, _circled
 from litagent.schema import normalize_doi, title_similarity, normalize_title
@@ -57,7 +61,7 @@ rec("21.4", "title_similarity 对称且低于阈值", abs(s1-s2)<1e-9 and 0<s1<0
 out = subprocess.run([sys.executable,"-B","-m","litagent.evaluation.calibration",
                       "--corpus","tests/fixtures/calibration_corpus_v2.jsonl",
                       "--queries","tests/fixtures/calibration_queries_v3.jsonl","--format","json"],
-                     cwd="C:/Users/Lenovo/Desktop/lit_agent/作品相关代码/scr",
+                     cwd=str(_REPO_ROOT / '作品相关代码' / 'scr'),
                      capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600)
 try:
     data = json.loads(out.stdout)

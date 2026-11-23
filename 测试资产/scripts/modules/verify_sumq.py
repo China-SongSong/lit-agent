@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 import sys, sqlite3, subprocess
-sys.path.insert(0, "C:/Users/Lenovo/Desktop/lit_agent/作品相关代码/scr")
+sys.path.insert(0, str(_REPO_ROOT / '作品相关代码' / 'scr'))
 from litagent.config import get_settings
 from litagent.schema import Summary, Document, Claim, summary_quality
 RES=[]
@@ -36,13 +40,13 @@ rec("B", "仅论断分类", got=="claims_only", got)
 
 # 网页端是否接入
 import re
-src = open("C:/Users/Lenovo/Desktop/lit_agent/作品相关代码/scr/app.py", encoding="utf-8").read()
+src = open(str(_REPO_ROOT / '作品相关代码' / 'scr' / 'app.py'), encoding="utf-8").read()
 rec("C", "app.py 使用 summary_quality", "summary_quality" in src, "出现 %d 次" % src.count("summary_quality"))
 rec("D", "app.py 传入正文字数", "content_chars" in src, "出现 %d 次" % src.count("content_chars"))
 
 # 自带测试
 out = subprocess.run([sys.executable,"-B","-m","unittest","discover","-s","tests"],
-                     cwd="C:/Users/Lenovo/Desktop/lit_agent/作品相关代码/scr",
+                     cwd=str(_REPO_ROOT / '作品相关代码' / 'scr'),
                      capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600)
 tail = (out.stderr or "").strip().splitlines()[-3:]
 rec("E", "自带测试全通过", out.returncode==0, " | ".join(tail)[:90])
