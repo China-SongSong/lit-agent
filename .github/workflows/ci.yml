@@ -13,53 +13,70 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  PYTHONUTF8: "1"
+  PYTHONIOENCODING: utf-8
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PIP_PROGRESS_BAR: "off"
+  NO_COLOR: "1"
+
 jobs:
-  quality:
-    name: Lint, compile and tests
+  lint:
+    name: Ruff
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install Ruff
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Ruff
+        run: ruff check "作品相关代码/scr" --output-format=github
+
+  test:
+    name: Compile and tests
     runs-on: windows-latest
     timeout-minutes: 30
 
     steps:
       - name: Checkout with LFS models
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           lfs: true
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: |
-            作品相关代码/requirements.txt
-            requirements-dev.txt
+          cache-dependency-path: 作品相关代码/requirements.txt
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: 作品相关代码/vendor/opencli-cli/package-lock.json
 
-      - name: Install runtime and lint dependencies
-        shell: pwsh
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r "作品相关代码/requirements.txt" -r "requirements-dev.txt"
+      - name: Install runtime dependencies
+        run: python -m pip install -r "作品相关代码/requirements.txt"
 
       - name: Install bundled OpenCLI
-        shell: pwsh
         run: npm ci --prefix "作品相关代码/vendor/opencli-cli"
 
-      - name: Ruff
-        shell: pwsh
-        run: ruff check "作品相关代码/scr" --output-format=github
-
       - name: Compile Python
-        shell: pwsh
         run: python -m compileall -q "作品相关代码/scr/app.py" "作品相关代码/scr/cli.py" "作品相关代码/scr/litagent" "作品相关代码/scr/tests"
 
       - name: Unit tests
-        shell: pwsh
         working-directory: 作品相关代码/scr
         run: python -B -m unittest discover -s tests -v

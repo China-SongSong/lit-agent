@@ -28,6 +28,8 @@
 
 - 新增 Windows GitHub Actions 工作流，覆盖 LFS 模型、锁定依赖、OpenCLI、
   Ruff、Python 编译和 72 项单元测试。
+- CI 将 Ruff 与依赖安装、运行测试拆成独立任务，固定 UTF-8 和无进度条输出，
+  兼容 Windows Runner 的中文路径与控制台代码页。
 - 新增 Ruff 基础规则集和精确锁版的开发依赖。
 
 ## 2026-11-22
