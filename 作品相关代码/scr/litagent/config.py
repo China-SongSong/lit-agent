@@ -236,6 +236,7 @@ class Settings:
     trace_max_chars:int=20000
     #网页端口配置
     streamlit_port:int=8501
+    url_autorun_token:str=""
     _notes:List[str]=field(default_factory=list,repr=False)
 
     def __post_init__(self)->None:
@@ -538,6 +539,7 @@ def build_settings()->Settings:
         streamlit_port=env_int(
             "LIT_STREAMLIT_PORT",default=8501,minimum=1,maximum=65535
         ),
+        url_autorun_token=env_str("LIT_URL_AUTORUN_TOKEN"),
     )
 
 _settings:Optional[Settings]=None

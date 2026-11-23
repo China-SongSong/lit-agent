@@ -25,6 +25,11 @@ from litagent.index.store import Store
 from litagent.presentation import readable_text_html
 from litagent.retrieve.trace import redact_source_hint
 from litagent.schema import summary_quality
+from litagent.web_links import(
+    autorun_allowed,
+    build_prefill_url,
+    parse_url_prefill,
+)
 
 st.set_page_config(
     page_title="lit-agent 文献助手",
@@ -244,6 +249,8 @@ def render_paper_card(item:Dict[str,Any],index:Optional[int]=None,
 def tab_chat()->None:
     st.header("💬 与 Agent 对话")
     st.caption("用自然语言描述你的需求，Agent 会自己决定检索、溯源、总结还是推荐。")
+    if st.session_state.pop("_url_autorun_notice",False):
+        st.caption("本次问题由带参数链接自动提交。")
 
     if not settings.has_llm:
         st.warning("未配置大模型 API Key，对话功能不可用。\n\n"
@@ -338,6 +345,21 @@ def tab_chat()->None:
             )
             if result.stopped_reason!="final_answer":
                 st.caption("停止原因：%s"%result.stopped_reason)
+            with st.expander("复制本题预填链接"):
+                st.caption("对方打开链接后可先检查问题，再手动发送。")
+                st.code(build_prefill_url(
+                    "http://127.0.0.1:8501/",mode="chat",text=question,
+                ))
+                st.divider()
+                st.caption("外部系统自动运行链接会立即调用模型并产生费用。")
+                if st.checkbox(
+                    "生成打开即运行链接",key="make_autorun_link",
+                ):
+                    st.code(build_prefill_url(
+                        "http://127.0.0.1:8501/",mode="chat",text=question,
+                        autorun=True,
+                        autorun_token=settings.url_autorun_token,
+                    ))
         except Exception as exc:  #noqa: BLE001
             status.update(label="失败",state="error")
             st.error("调用失败：%s: %s"%(type(exc).__name__,exc))
@@ -393,6 +415,14 @@ def tab_trace()->None:
 
     if not run or not quote.strip():
         return
+
+    with st.expander("复制本次溯源预填链接"):
+        st.caption("链接只保留脱敏后的来源标识，不包含会话参数。")
+        st.code(build_prefill_url(
+            "http://127.0.0.1:8501/",mode="trace",text=quote,
+            source_hint=redact_source_hint(source_hint),
+            allow_online=allow_online,
+        ))
 
     tracer=get_tracer()
     with st.spinner("正在比对 n-gram 指纹与 BM25…"):
@@ -838,12 +868,71 @@ def tab_history()->None:
             store.clear_query_history(kind=kind)
             st.rerun()
 
+def _apply_url_prefill()->None:
+    """只在 URL 参数变化时载入一次，避免每次 rerun 覆盖用户输入。"""
+    raw={key:st.query_params.get_all(key) for key in st.query_params}
+    prefill=parse_url_prefill(raw)
+    if not prefill.token:
+        return
+    if st.session_state.get("_url_prefill_token")==prefill.token:
+        return
+    st.session_state["_url_prefill_token"]=prefill.token
+    if prefill.mode=="trace":
+        st.session_state["trace_input"]=prefill.quote
+        st.session_state["trace_source_hint"]=redact_source_hint(
+            prefill.source_hint
+        )
+        st.session_state["trace_online"]=prefill.allow_online
+    elif prefill.mode=="chat" and prefill.question:
+        if prefill.autorun:
+            if autorun_allowed(prefill,settings.url_autorun_token):
+                st.session_state["pending_question"]=prefill.question
+                st.session_state["_url_autorun_notice"]=True
+                st.session_state.pop("url_question_draft",None)
+                st.session_state.pop("url_autorun_error",None)
+            else:
+                st.session_state["url_question_draft"]=prefill.question
+                st.session_state["url_autorun_error"]=(
+                    "链接中的自动运行令牌缺失或不匹配，已降级为问题草稿。"
+                )
+        else:
+            st.session_state["url_question_draft"]=prefill.question
+
+
+def _show_url_question_draft()->None:
+    error=str(st.session_state.pop("url_autorun_error","") or "")
+    if error:
+        st.error(error)
+    draft=str(st.session_state.get("url_question_draft") or "").strip()
+    if not draft:
+        return
+    with st.container(border=True):
+        st.markdown("**来自链接的问题草稿**")
+        st.text(draft)
+        st.caption("系统不会自动执行；确认问题后再发送给 Agent。")
+        col1,col2=st.columns([1,1])
+        with col1:
+            if st.button("发送给 Agent",type="primary",key="url_question_send",
+                         **stretch_kwargs()):
+                st.session_state["pending_question"]=draft
+                st.session_state.pop("url_question_draft",None)
+                st.rerun()
+        with col2:
+            if st.button("清除草稿",key="url_question_clear",
+                         **stretch_kwargs()):
+                st.session_state.pop("url_question_draft",None)
+                st.rerun()
+
+
 def main()->None:
     render_sidebar()
 
     if not get_store().exists:
         st.error("尚未建库。请先在项目目录执行：`python cli.py init`")
         return
+
+    _apply_url_prefill()
+    _show_url_question_draft()
 
     tabs=st.tabs(["💬 与 Agent 对话","🔍 溯源","📚 文献库","🕘 查询历史"])
     with tabs[0]:
