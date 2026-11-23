@@ -1,0 +1,64 @@
+{
+  "benchmark_version": "large-v1",
+  "corpus_sha256": "0eae195f853b4489f2d3fd7fd5594fdb33d629c17ce014e8ea17704dc6a9c434",
+  "queries_sha256": "c084cf150d3fc0a19b441a568a61befc26041ed6230417679d4f78e1ddd3cd39",
+  "documents": 10000,
+  "fulltext_documents": 1000,
+  "chunks": 17000,
+  "postings": 269785,
+  "fingerprints": 739560,
+  "build_seconds": 1423.91,
+  "trace_queries": 1100,
+  "trace_correct": 1000,
+  "trace_wrong": 0,
+  "trace_missed": 0,
+  "trace_precision": 1.0,
+  "trace_recall": 1.0,
+  "by_query_type": {
+    "exact": {
+      "total": 500,
+      "correct": 500,
+      "wrong": 0,
+      "miss": 0
+    },
+    "exact_whitespace": {
+      "total": 250,
+      "correct": 250,
+      "wrong": 0,
+      "miss": 0
+    },
+    "short_exact": {
+      "total": 250,
+      "correct": 250,
+      "wrong": 0,
+      "miss": 0
+    },
+    "hard_negative": {
+      "total": 50,
+      "correct": 0,
+      "wrong": 0,
+      "miss": 0
+    },
+    "unrelated": {
+      "total": 50,
+      "correct": 0,
+      "wrong": 0,
+      "miss": 0
+    }
+  },
+  "topic_search_total": 50,
+  "topic_search_correct": 17,
+  "topic_search_recall_at_10": 0.34,
+  "latency_ms": {
+    "p50": 286.074,
+    "p95": 1279.382,
+    "max": 2101.193
+  },
+  "integrity_check": "ok",
+  "orphans": {
+    "postings": 0,
+    "fingerprints": 0,
+    "chunk_text": 0
+  },
+  "database_size_bytes": 255418368
+}
