@@ -22,7 +22,7 @@ OpenCLI Browser Bridge 和本地网页，不需要再单独打开另一个启动
 
 二、脚本做了哪几件事
 
-1. 找 Python。版本低于 3.9 会提示。
+1. 找 Python。版本低于 3.12 会提示。
 2. 检查 requests、jieba、PyMuPDF、streamlit、numpy、onnxruntime、sentencepiece，
    缺了就自动装。第一次装要联网，具体时间取决于网络。
 3. 建好 data 目录和 SQLite 的表结构，重复执行也没问题。
