@@ -50,14 +50,19 @@ class IndexBuilder:
     def __init__(self,store:Store,settings:Optional[Settings]=None)->None:
         self.store=store
         self.settings=settings or default_settings
-        self.embedding_encoder=get_embedding_encoder(
-            backend=self.settings.vector_backend,
-            model_dir=self.settings.vector_model_dir,
-            batch_size=self.settings.vector_batch_size,
-            dimension=self.settings.vector_dim,
-        )
-        self.vector_model=self.embedding_encoder.model
-        self.vector_dim=self.embedding_encoder.dimension
+        if self.settings.vector_enabled:
+            self.embedding_encoder=get_embedding_encoder(
+                backend=self.settings.vector_backend,
+                model_dir=self.settings.vector_model_dir,
+                batch_size=self.settings.vector_batch_size,
+                dimension=self.settings.vector_dim,
+            )
+            self.vector_model=self.embedding_encoder.model
+            self.vector_dim=self.embedding_encoder.dimension
+        else:
+            self.embedding_encoder=None
+            self.vector_model=""
+            self.vector_dim=self.settings.vector_dim
 
     # ------------------------------------------------------------------
     # 稀疏索引（BM25 + 精确指纹）

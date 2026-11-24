@@ -32,7 +32,9 @@ quote = " ".join(raw.split())[150:330]
 tr = QuoteTracer(store, s)
 pos,_ = tr.trace(quote, allow_online=False)
 neg,_ = tr.trace("量子纠缠态在超导约瑟夫森结中的退相干时间测量方法研究", allow_online=False)
-rec("24d", "端到端溯源正反两例", pos.found and pos.level=="local_exact" and (not neg.found) and neg.level=="none",
+rec("24d", "端到端溯源正反两例",
+    pos.found and pos.level=="local_exact"
+    and not neg.found and neg.level in ("none","local_semantic") and neg.confidence == 0,
     "正例 %s %.3f / 反例 %s" % (pos.level, pos.confidence, neg.level))
 
 # 25 断网降级

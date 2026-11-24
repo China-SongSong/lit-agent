@@ -20,6 +20,8 @@ settings=get_settings()
 ensure_deps_on_path(settings.deps_dir)
 setup_logging(settings,component="streamlit")
 
+from litagent.file_dialogs import choose_local_folder
+from litagent.importing import ImportReport, LocalDocumentImporter
 from litagent.index.store import Store
 from litagent.presentation import readable_text_html
 from litagent.retrieve.trace import redact_source_hint
@@ -59,6 +61,11 @@ def get_tracer()->Any:
     from litagent.retrieve.trace import QuoteTracer
 
     return QuoteTracer(get_store(),settings)
+
+
+@st.cache_resource(show_spinner=False)
+def get_importer()->LocalDocumentImporter:
+    return LocalDocumentImporter(get_store(),settings)
 
 
 @st.cache_data(ttl=10,show_spinner=False)
@@ -568,6 +575,7 @@ def tab_trace()->None:
 def refresh_caches()->None:
     get_store.clear()
     get_tracer.clear()
+    get_importer.clear()
 
 def _remove_pdf(store:Any,doc_id:str)->int:
     """删除该文献已下载的 PDF 文件。只允许删项目目录以内的文件。"""
@@ -586,12 +594,140 @@ def _remove_pdf(store:Any,doc_id:str)->int:
         return 0
     return 0
 
+
+def _render_import_report(report: ImportReport) -> None:
+    if report.errors:
+        st.warning(report.summary())
+    elif report.documents_imported or report.documents_updated or report.documents_cleaned:
+        st.success(report.summary())
+    elif report.failed_files:
+        st.error(report.summary())
+    else:
+        st.warning(report.summary())
+
+
+def _run_local_import(
+    *,
+    paths:Optional[List[Path]]=None,
+    uploads:Optional[List[Any]]=None,
+    recursive:bool=True,
+) -> ImportReport:
+    importer=get_importer()
+
+    def progress(stage:str,done:int,total:int,label:str)->None:
+        names={
+            "scan":"读取文件",
+            "clean":"清洗与分块",
+            "lexical":"建立 BM25 与精确指纹",
+            "vector":"生成本地语义向量",
+        }
+        text=f"{names.get(stage,stage)}：{done}/{total}"
+        if label:
+            text+=f" · {label[:70]}"
+        status.write(text)
+
+    with st.status("正在导入文档…",expanded=True) as status:
+        if uploads is not None:
+            report=importer.import_uploads(uploads,on_progress=progress)
+        else:
+            report=importer.import_paths(
+                paths or [],recursive=recursive,on_progress=progress,
+            )
+        status.update(
+            label="导入流程完成" if not report.failed_files else "导入完成，但有文件失败",
+            state="complete",
+            expanded=False,
+        )
+
+    _render_import_report(report)
+    if report.documents_imported or report.documents_updated or report.documents_cleaned:
+        refresh_caches()
+    return report
+
+
+def _render_document_import() -> None:
+    extensions=LocalDocumentImporter.supported_extensions()
+    with st.expander("📥 从本地导入文献（自动清洗并建索引）",expanded=False):
+        st.caption(
+            "支持 PDF、DOCX、DOC、RTF、TXT、Markdown 和 HTML。"
+            "导入完成后会自动清洗、分块，并建立 BM25、精确指纹与本地语义向量索引。"
+        )
+        upload_tab,folder_tab=st.tabs(["上传文件","导入本机文件夹"])
+
+        with upload_tab:
+            uploads=st.file_uploader(
+                "选择一个或多个文档",
+                type=extensions,
+                accept_multiple_files=True,
+                key="local_import_uploads",
+                help="浏览器上传的文件会复制到 data/imports 后入库。",
+            )
+            if st.button(
+                "导入所选文件并建立索引",
+                type="primary",
+                disabled=not uploads,
+                key="local_import_upload_btn",
+                **stretch_kwargs(),
+            ):
+                _run_local_import(uploads=list(uploads or []))
+
+        with folder_tab:
+            st.caption(
+                "文件夹扫描直接读取本机路径，不复制原文件。"
+                "单次最多导入 500 个受支持文件，自动跳过依赖、缓存和 Word 临时文件。"
+            )
+            pick_col,path_col=st.columns([1,3])
+            if pick_col.button(
+                "选择文件夹",
+                key="local_import_pick_folder",
+                **stretch_kwargs(),
+            ):
+                try:
+                    selected=choose_local_folder(
+                        st.session_state.get("local_import_folder","")
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    st.error(f"无法打开文件夹选择框：{exc}")
+                else:
+                    if selected is not None:
+                        st.session_state["local_import_folder"]=str(selected)
+                        st.rerun()
+            folder=path_col.text_input(
+                "文件夹路径",
+                key="local_import_folder",
+                placeholder=r"例如 D:\我的论文",
+            )
+            recursive=st.checkbox(
+                "包含子文件夹",
+                value=True,
+                key="local_import_recursive",
+            )
+            if st.button(
+                "扫描文件夹并建立索引",
+                type="primary",
+                disabled=not folder.strip(),
+                key="local_import_folder_btn",
+                **stretch_kwargs(),
+            ):
+                target=Path(folder).expanduser()
+                if not target.exists():
+                    st.error("文件夹或文件路径不存在。")
+                elif not target.is_dir() and not target.is_file():
+                    st.error("请选择文件或文件夹路径。")
+                else:
+                    _run_local_import(
+                        paths=[target],
+                        recursive=recursive,
+                    )
+
+
 #页签 3：文献库（查看 + 删除）
 def tab_docs()->None:
     st.header("📚 文献库")
     st.caption("库里全部文献都在这里。内容级别为「全文」的才能溯源到句子；"
                "「摘要」「仅标题」表示这篇没有下到开放获取全文。")
     st.caption("数据库：%s"%settings.db_path)
+    _render_document_import()
 
     store=get_store()
     try:

@@ -28,7 +28,8 @@ Windows 10/11，Python 3.14（3.9 以上即可），依赖 requests、jieba、Py
 功能回归：
 
     python 测试资产/scripts/regression/fresh_reg.py
-    python 测试资产/scripts/regression/fresh_ui.py
+    python 测试资产/scripts/regression/retest_ui.py
+    python 测试资产/scripts/blackbox_trace.py --no-online
 
 模块专项（Agent 主循环、RRF 融合、检索降级、输出解析、去重、引文、系统验收）：
 
@@ -65,6 +66,15 @@ Windows 10/11，Python 3.14（3.9 以上即可），依赖 requests、jieba、Py
   修改测评集请改 fixtures，再复制回来，避免两处不一致。同步命令：
 
       copy 作品相关代码\scr\tests\fixtures\calibration_queries_v3.jsonl 测试资产\datasets\
+
+## 2026-11-24 对齐说明
+
+- `fresh_reg.py` 已改用 `production_baseline_v3.json`，不再读取历史 v1 基线。
+- 微改动样例会先确认文本确实发生变化，再判断溯源区分度。
+- 无关文本允许返回 `none` 或 `local_semantic`，两者都必须保持 `found=false`。
+- 总结完整度按 `summary_quality` 的内容级别规则判断，不要求题录或摘要级文献
+  产生只有全文才能支持的字段。
+- 数据质量中的摘要完整率只在全文/摘要级文献上计算。
 
 ## 说明
 

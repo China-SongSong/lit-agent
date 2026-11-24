@@ -75,6 +75,8 @@ class FetchReport:  #一次抓取任务的执行报告，字段全是计数器�
     pdfs_downloaded:int=0  #PDF 下载成功数，与入库计数分开统计，两者口径不同不能混算
     pdf_failures:int=0  #PDF 下载失败数，不阻断入库流程，只在报告里体现
     archive_files:List[str]=field(default_factory=list)  #本次写出的归档文件路径列表，便于出错后回溯
+    new_ids:List[str]=field(default_factory=list)
+    updated_ids:List[str]=field(default_factory=list)
     elapsed_seconds:float=0.0  #总耗时用浮点秒，渲染时再统一格式化，中间不做取整
 
     def summary(self)->str:
@@ -111,6 +113,8 @@ class FetchReport:  #一次抓取任务的执行报告，字段全是计数器�
             "pdfs_downloaded":self.pdfs_downloaded,
             "pdf_failures":self.pdf_failures,
             "archive_files":self.archive_files,
+            "new_ids":self.new_ids,
+            "updated_ids":self.updated_ids,
             "elapsed_seconds":round(self.elapsed_seconds,2),  #耗时在对外输出时才保留两位小数，内部仍然存全精度
         }
 
@@ -217,6 +221,8 @@ class FetchRunner:  #抓取调度器，串起去重、落库、归档和续传�
                     current.merge(doc)  #合并是字段级补齐而不是整条覆盖：Crossref 有卷期页，OpenAlex 有摘要，各取所长
                     if existing_id not in pending:  #还没登记过更新任务的才登记一次，同一个 ID 重复登记会在落库时白写两遍
                         to_update.append((existing_id,current))  #已经登记过的只累加合并计数，不再重复进'to_update'
+                    if existing_id not in report.updated_ids:
+                        report.updated_ids.append(existing_id)
                     report.merged+=1  #合并计数加一，报告里的合并数就是这么累出来的
                     # 把合并后新学到的 DOI / 标题登记进映射，
                     #补登记这一段的用意写在下两行
@@ -236,6 +242,7 @@ class FetchRunner:  #抓取调度器，串起去重、落库、归档和续传�
 
             to_insert.append(doc)  #走到这里说明确属新文献，进入待插入队列
             pending[doc.id]=doc  #同时写进'pending'内存映射，本批后续文献靠它才能匹配到这条还没落库的记录
+            report.new_ids.append(doc.id)
             report.new+=1  #新增计数加一
             norm_doi=normalize_doi(doc.doi)  #新文档的 DOI 也登记进映射，好让后面抓到的同 DOI 文献能命中
             if norm_doi:

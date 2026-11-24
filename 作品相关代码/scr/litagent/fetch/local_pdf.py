@@ -1,12 +1,18 @@
 """扫描本地文献目录。
 
-支持 PDF、TXT、Markdown 和 DOCX。PDF 在这一步只取元数据，正文留给
-清洗流程读取。CAJ、WPS 和加密 PDF 会跳过并记录原因。
+支持 PDF、DOCX、DOC、RTF、TXT、Markdown 与 HTML。PDF 在这一步只取
+元数据，正文留给清洗流程读取；其他文本型文档在这里读取正文。
+CAJ、WPS 和加密 PDF 会跳过并记录原因。
 """
 from __future__ import annotations  #导入未来特性，让类型注解延迟求值，避免循环导入时报错。
 
+import base64
+import os
 import re  #导入标准库 re，后面用它处理文件名和 Word 的 XML。
+import subprocess
+import tempfile
 import zipfile  #导入标准库 zipfile，因为 docx 本质就是一个压缩包。
+from html.parser import HTMLParser
 from pathlib import Path  #导入 Path，用它跨平台地表示和拼接文件路径。
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -23,7 +29,11 @@ from litagent.schema import (  #导入文档模型，以及内容指纹、DOI �
 PDF_SUFFIXES={".pdf"}  #定义 PDF 后缀集合；用集合判断比列表快，而且自动去重。
 TEXT_SUFFIXES={".txt",".md",".markdown",".text"}
 DOCX_SUFFIXES={".docx"}
-SUPPORTED_SUFFIXES=PDF_SUFFIXES|TEXT_SUFFIXES|DOCX_SUFFIXES  #用竖线把三个集合合并成总集合，判断受不受支持只需一次。
+LEGACY_WORD_SUFFIXES={".doc",".rtf"}
+HTML_SUFFIXES={".html",".htm"}
+SUPPORTED_SUFFIXES=(
+    PDF_SUFFIXES|TEXT_SUFFIXES|DOCX_SUFFIXES|LEGACY_WORD_SUFFIXES|HTML_SUFFIXES
+)
 
 #注释：下面是扫描时要跳过的目录名，避免把依赖或备份里的文件也扫进来。
 SKIP_DIR_NAMES={  #开始定义要跳过的目录名集合。
@@ -92,6 +102,134 @@ def read_docx(path:Path)->str:  #定义读 docx 的函数，返回整篇纯文�
     #注释：连续多个空段落压成一个空行，保持段落之间空一行的常见排版。
     text="\n".join(lines)  #用换行把段落拼回整篇文本，段落边界因此保留下来。
     return re.sub(r"\n{3,}","\n\n",text).strip()  #用正则把三个及以上连续换行压成两个，并去掉首尾空白。
+
+
+class _HTMLTextExtractor(HTMLParser):
+    """把常见 HTML 文档转换成保留段落边界的纯文本。"""
+
+    BLOCK_TAGS={"p","div","section","article","header","footer","li","tr","h1","h2","h3","h4","h5","h6"}
+
+    def __init__(self)->None:
+        super().__init__(convert_charrefs=True)
+        self.parts:List[str]=[]
+
+    def handle_starttag(self,tag:str,attrs:List[Tuple[str,Optional[str]]])->None:
+        if tag in self.BLOCK_TAGS or tag=="br":
+            self.parts.append("\n")
+
+    def handle_endtag(self,tag:str)->None:
+        if tag in self.BLOCK_TAGS:
+            self.parts.append("\n")
+
+    def handle_data(self,data:str)->None:
+        if data:
+            self.parts.append(data)
+
+    def text(self)->str:
+        value="".join(self.parts).replace("\r\n","\n").replace("\r","\n")
+        value=re.sub(r"[ \t\u00a0\u3000]+"," ",value)
+        value=re.sub(r" *\n *","\n",value)
+        return re.sub(r"\n{3,}","\n\n",value).strip()
+
+
+def read_html(path:Path)->str:
+    """读取 HTML/HTM 文档正文，忽略脚本正文并保留段落换行。"""
+    raw=path.read_bytes()
+    for encoding in ("utf-8-sig","utf-8","gb18030","gbk","big5"):
+        try:
+            source=raw.decode(encoding)
+            break
+        except UnicodeDecodeError:
+            continue
+    else:
+        source=raw.decode("utf-8",errors="replace")
+    source=re.sub(r"(?is)<(script|style)\b.*?</\1>","",source)
+    parser=_HTMLTextExtractor()
+    parser.feed(source)
+    return parser.text()
+
+
+def _powershell_convert_document(path:Path,output:Path)->bool:
+    """通过本机 Word/WPS COM 将旧版 Word 文档保存为 UTF-8 文本。"""
+    if os.name!="nt":
+        return False
+    executable=os.environ.get("SystemRoot","C:\\Windows")+"\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+    if not Path(executable).is_file():
+        return False
+    safe_input=str(path).replace("'","''")
+    safe_output=str(output).replace("'","''")
+    script=f"""
+$ErrorActionPreference = 'Stop'
+$inputPath = '{safe_input}'
+$outputPath = '{safe_output}'
+$errors = @()
+foreach ($progId in @('Word.Application', 'Kwps.Application')) {{
+    $app = $null
+    $document = $null
+    try {{
+        $app = New-Object -ComObject $progId
+        if ($null -ne $app) {{
+            $app.Visible = $false
+            $app.DisplayAlerts = 0
+        }}
+        $document = $app.Documents.Open($inputPath, $false, $true, $false)
+        $text = [string]$document.Content.Text
+        [System.IO.File]::WriteAllText(
+            $outputPath,
+            $text,
+            [System.Text.UTF8Encoding]::new($false)
+        )
+        exit 0
+    }} catch {{
+        $errors += $progId + ': ' + $_.Exception.Message
+    }} finally {{
+        if ($null -ne $document) {{
+            try {{ $document.Close($false) }} catch {{ }}
+        }}
+        if ($null -ne $app) {{
+            try {{ $app.Quit() }} catch {{ }}
+        }}
+    }}
+}}
+[Console]::Error.WriteLine(($errors -join ' | '))
+exit 1
+"""
+    encoded=base64.b64encode(script.encode("utf-16le")).decode("ascii")
+    creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0)
+    completed=subprocess.run(
+        [executable,"-NoProfile","-NonInteractive","-STA","-EncodedCommand",encoded],
+        capture_output=True,
+        timeout=90,
+        creationflags=creationflags,
+        check=False,
+    )
+    return completed.returncode==0 and output.is_file()
+
+
+def read_legacy_word(path:Path)->str:
+    """读取 DOC/RTF；优先使用本机 Word/WPS COM，失败时尝试 LibreOffice。"""
+    suffix=path.suffix.lower()
+    with tempfile.TemporaryDirectory(prefix="litagent-word-") as temp_dir:
+        output=Path(temp_dir)/(path.stem+".txt")
+        if _powershell_convert_document(path,output):
+            return _decode_bytes(output.read_bytes()).strip()
+
+        for command in ("soffice","libreoffice"):
+            try:
+                result=subprocess.run(
+                    [command,"--headless","--convert-to","txt:Text","--outdir",temp_dir,str(path)],
+                    capture_output=True,
+                    timeout=90,
+                    creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0),
+                    check=False,
+                )
+                if result.returncode==0 and output.is_file():
+                    return _decode_bytes(output.read_bytes()).strip()
+            except (FileNotFoundError,subprocess.TimeoutExpired):
+                continue
+        raise RuntimeError(
+            f"无法解析 {suffix} 文件；请安装 Microsoft Word、WPS 或 LibreOffice"
+        )
 
 
 def extract_pdf_metadata(path:Path)->Tuple[Dict[str,Any],Optional[str]]:  #定义读 PDF 元数据的函数，返回元数据字典和首页文本两部分。
@@ -197,11 +335,12 @@ class LocalPdfSource(Source):
         return found
 
     @staticmethod  #静态方法装饰器：下面的文本转换不需要实例状态。
-    def _from_text_file(path:Path)->Optional[Document]:  #把文本类文件读成文档对象，失败时返回空值。
-        try:  #开 try：文件可能被占用、权限不足或中途消失。
-            text=_decode_bytes(path.read_bytes())  #先读原始字节再交给多编码解码器，先字节后解码是关键顺序。
-        except OSError:  #捕获系统读写错误。
-            return None  #读不了就放弃这一个文件，不影响别的文件。
+    def _from_text_file(path:Path,*,text:Optional[str]=None)->Optional[Document]:  #把文本类文件读成文档对象，失败时返回空值。
+        if text is None:
+            try:  #开 try：文件可能被占用、权限不足或中途消失。
+                text=_decode_bytes(path.read_bytes())  #先读原始字节再交给多编码解码器，先字节后解码是关键顺序。
+            except OSError:  #捕获系统读写错误。
+                return None  #读不了就放弃这一个文件，不影响别的文件。
         if not text.strip():  #整篇都是空白字符的文件没有价值。
             return None  #空文件不值得生成文档，直接放弃。
         title=guess_title_from_filename(path)  #文本文件没有内嵌元数据，只能用文件名当标题。
@@ -292,16 +431,26 @@ class LocalPdfSource(Source):
                 if suffix in PDF_SUFFIXES:  #PDF 走专门的元数据解析分支。
                     doc=self._from_pdf(path)  #调用 PDF 转换函数拿到文档对象。
                 elif suffix in DOCX_SUFFIXES:  #Word 分支比较特殊，要先用通用文本读取拿基础信息。
-                    doc=self._from_text_file(path)  #先按文本文件读一遍，拿到路径、标题等基础信息。
-                    if doc is not None:  #读成功才继续做真正的 docx 解析。
-                        #注释：通用读取拿到的是压缩包字节，必须换成专用解析。
-                        text=read_docx(path)  #用 zip 加 XML 的方式抽出真正的正文。
-                        if not text.strip():  #抽不出文字说明文档是空的或格式异常。
-                            continue  #直接跳过这个文件，连基础文档也不加进结果。
-                        doc.fulltext=text  #用抽出的正文覆盖原来的压缩包字节，不覆盖会污染语料库。
-                        doc.content_hash=content_hash(text[:200000])  #正文变了必须重算内容指纹，否则去重和增量更新都会失误。
+                    text=read_docx(path)
+                    if not text.strip():
+                        raise ValueError("DOCX 没有可读取的正文")
+                    doc=self._from_text_file(path,text=text)
+                    if doc is not None:
                         doc.extra["file_type"]="docx"
-                        doc.title=doc.title or guess_title_from_filename(path)  #标题为空时才用文件名兜底。
+                elif suffix in LEGACY_WORD_SUFFIXES:
+                    text=read_legacy_word(path)
+                    if not text.strip():
+                        raise ValueError(f"{suffix.upper()} 没有可读取的正文")
+                    doc=self._from_text_file(path,text=text)
+                    if doc is not None:
+                        doc.extra["file_type"]=suffix.lstrip(".")
+                elif suffix in HTML_SUFFIXES:
+                    text=read_html(path)
+                    if not text.strip():
+                        raise ValueError("HTML 没有可读取的正文")
+                    doc=self._from_text_file(path,text=text)
+                    if doc is not None:
+                        doc.extra["file_type"]=suffix.lstrip(".")
                 elif suffix in TEXT_SUFFIXES:  #txt 和 md 直接按文本处理即可。
                     doc=self._from_text_file(path)
                 else:  #兜底分支，前面已经过滤过后缀，这里只防意外。
@@ -350,6 +499,8 @@ class LocalPdfSource(Source):
 __all__=[
     "LocalPdfSource",  #导出本地数据源这个类。
     "read_docx",  #导出 Word 解析函数，方便别处复用。
+    "read_html",
+    "read_legacy_word",
     "extract_pdf_metadata",  #导出 PDF 元数据读取函数。
     "guess_title_from_filename",  #导出用文件名猜标题的函数。
     "extract_doi_from_text",  #导出从文本抓 DOI 的函数。

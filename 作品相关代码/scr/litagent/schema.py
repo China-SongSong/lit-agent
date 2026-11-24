@@ -159,7 +159,7 @@ def normalize_doi(doi:Optional[str])->Optional[str]:
     value=doi.strip()
     value=re.sub(r"^(?:https?://)?(?:dx\.)?doi\.org/","",value,flags=re.I)
     value=re.sub(r"^doi:\s*","",value,flags=re.I)  #去掉doi:前缀
-    value=value.strip().rstrip(".,;)]}>\"'")
+    value=value.strip().rstrip("/.,;)]}>\"'")
     value=value.strip().lower()
     if not value or not value.startswith("10."):
         return None  #条件成立时直接返回None

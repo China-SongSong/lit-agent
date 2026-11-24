@@ -10,9 +10,13 @@ from litagent.clean.normalize import detect_language, remove_invisible
 from litagent.disciplines import classify_disciplines
 from litagent.fetch.arxiv import parse_journal_ref
 from litagent.fetch.base import HttpClient, HttpError
+from litagent.schema import normalize_doi
 
 
 class IssueObservationTests(unittest.TestCase):
+    def test_normalize_doi_removes_trailing_slash(self)->None:
+        self.assertEqual(normalize_doi("10.1000/ABC/"),"10.1000/abc")
+
     def test_http_error_exposes_retryable_flag(self)->None:
         self.assertTrue(
             HttpError("HTTP 503",status=503,retryable=True).retryable

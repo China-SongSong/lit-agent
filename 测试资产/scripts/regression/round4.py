@@ -38,9 +38,22 @@ rec("性能", "空白归一化形态短查询同样快", t2 < 30, "%.2f ms（若
 
 # 非原样子串
 para = " ".join(raw.split())[200:280]
+def mutate_quote(text):
+    for old,new in ((" the "," a "),(" and "," or "),(" of "," in "),(" to "," from ")):
+        if old in text:
+            return text.replace(old,new,1)
+    words=text.split()
+    for index,word in enumerate(words):
+        if len(word)>=5 and word.isalpha():
+            words[index]=word[:-1]+"x"
+            return " ".join(words)
+    return text
+
+mutated=mutate_quote(para)
+rec("性能", "微改动样例确实发生变化", mutated != para, mutated[:80])
 variants = {
   "原样80字": para,
-  "改一个词": para.replace(" the ", " a ", 1),
+  "改一个词": mutated,
   "加前缀干扰": "extra unrelated words " + para,
   "截取后半段": para[len(para)//2:],
 }

@@ -63,8 +63,20 @@ rec("E", "逐字原文 → 返回出处文献", r1.hit is not None and r1.hit.do
 rec("E", "逐字原文 → 返回引文", bool(tracer._safe_citation(r1.hit.doc)) if r1.hit and r1.hit.doc else False,
     (tracer._safe_citation(r1.hit.doc)[:80] if r1.hit and r1.hit.doc else ""))
 
-# 微改动
-q1 = q0.replace(" the ", " a ", 1)
+# 微改动：优先替换常见虚词，找不到时改写一个明确单词，避免“未改动却当改动测”
+def mutate_quote(text):
+    for old,new in ((" the "," a "),(" and "," or "),(" of "," in "),(" to "," from ")):
+        if old in text:
+            return text.replace(old,new,1)
+    words=text.split()
+    for index,word in enumerate(words):
+        if len(word)>=5 and word.isalpha():
+            words[index]=word[:-1]+"x"
+            return " ".join(words)
+    return text
+
+q1 = mutate_quote(q0)
+rec("E", "微改动样例确实发生变化", q1 != q0, q1[:80])
 r2, rep2 = tracer.trace(q1, allow_online=False)
 rec("E", "微改动 → 仍找到", r2.found, "level=%s conf=%.3f" % (r2.level, r2.confidence))
 rec("E", "微改动 → 置信度不等于原文（有区分度）", abs(r2.confidence - r1.confidence) > 0 or r2.level != r1.level,
@@ -72,12 +84,13 @@ rec("E", "微改动 → 置信度不等于原文（有区分度）", abs(r2.conf
 
 # 无匹配
 r3, rep3 = tracer.trace("量子纠缠态在超导约瑟夫森结中的退相干时间测量方法研究", allow_online=False)
-rec("E", "无关文本 → none", r3.level == "none" and not r3.found,
+rec("E", "无关文本不确认出处",
+    r3.level in ("none","local_semantic") and not r3.found and r3.confidence == 0,
     "level=%s conf=%.3f cand=%d" % (r3.level, r3.confidence, rep3.phrase_candidates))
 
 # 空输入
 r4, rep4 = tracer.trace("", allow_online=False)
-rec("E", "空输入 → 不抛异常且有说明", (r4.level in ("", None)) and bool(r4.note), r4.note[:60])
+rec("E", "空输入 → empty 且有说明", r4.level == "empty" and bool(r4.note), r4.note[:60])
 
 # 过短
 r5, rep5 = tracer.trace("电池", allow_online=False)

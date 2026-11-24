@@ -34,6 +34,11 @@ OpenCLI Browser Bridge 和本地网页，不需要再单独打开另一个启动
 运行日志写在 data\logs\litagent.log，会自动轮转。一次溯源最多处理 20,000 字，
 超过时会提示截取最关键的一段，避免超长输入拖慢整个系统。
 
+进入“文献库”后展开“从本地导入文献（自动清洗并建索引）”，可以直接上传
+PDF、DOCX、DOC、RTF、TXT、Markdown 或 HTML 文件，也可以用“选择文件夹”
+批量导入本机目录。导入完成后系统会自动清洗和建立全部索引，不需要再执行
+命令行。旧版 DOC/RTF 需要本机安装 Microsoft Word、WPS 或 LibreOffice。
+
 
 三、环境要求
 

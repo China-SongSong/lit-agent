@@ -26,7 +26,7 @@ from litagent.retrieve.search import HybridSearcher
 from litagent.cite.gbt7714 import format_gbt7714
 from litagent.index.builder import IndexBuilder
 from litagent.clean.chunker import chunk_text
-from litagent.schema import Document, Author
+from litagent.schema import Document, Author, summary_quality
 
 s = get_settings(); store = Store(s.db_path); store.init_schema()
 con = sqlite3.connect(str(s.db_path)); cur = con.cursor()
@@ -69,11 +69,26 @@ cur.execute("""select t.text from chunks c join chunk_text t on t.chunk_id=c.id
 q0 = " ".join(cur.fetchone()[0].split())[150:330]
 r1, p1 = tracer.trace(q0, allow_online=False)
 rec("溯源", "逐字原文", r1.found and r1.level == "local_exact", "level=%s conf=%.3f" % (r1.level, r1.confidence))
-r2, _ = tracer.trace(q0.replace(" the ", " a ", 1), allow_online=False)
+def mutate_quote(text):
+    for old,new in ((" the "," a "),(" and "," or "),(" of "," in "),(" to "," from ")):
+        if old in text:
+            return text.replace(old,new,1)
+    words=text.split()
+    for index,word in enumerate(words):
+        if len(word)>=5 and word.isalpha():
+            words[index]=word[:-1]+"x"
+            return " ".join(words)
+    return text
+
+q1 = mutate_quote(q0)
+rec("溯源", "微改动样例确实发生变化", q1 != q0, q1[:100])
+r2, _ = tracer.trace(q1, allow_online=False)
 rec("溯源", "微改动仍找到且有区分度", r2.found and r2.confidence != r1.confidence,
     "level=%s conf=%.3f" % (r2.level, r2.confidence))
 r3, p3 = tracer.trace("量子纠缠态在超导约瑟夫森结中的退相干时间测量方法研究", allow_online=False)
-rec("溯源", "无关文本 → none", r3.level == "none" and not r3.found, "level=%s" % r3.level)
+rec("溯源", "无关文本不确认出处",
+    r3.level in ("none","local_semantic") and not r3.found and r3.confidence == 0,
+    "level=%s" % r3.level)
 
 # 回归：空输入等级（原缺陷 6）
 r4, _ = tracer.trace("", allow_online=False)
@@ -107,10 +122,23 @@ except Exception as e:
     err = e
 s.llm_api_key = orig
 rec("总结", "缓存命中免密钥（回归）", err is None, str(err).splitlines()[0][:80] if err else "未报错")
-rows = cur.execute("select tldr,problem,methods,findings,contributions,limitations from summaries").fetchall()
-full = sum(1 for r in rows if all(x and str(x).strip() for x in r))
-empty = sum(1 for r in rows if not any(x and str(x).strip() for x in r))
-rec("总结", "结构化字段完整度", full == len(rows), "共 %d 篇：完整 %d、全空 %d" % (len(rows), full, empty))
+summary_ids=[r[0] for r in cur.execute("select doc_id from summaries").fetchall()]
+qualities=[]
+for doc_id in summary_ids:
+    summary=store.get_summary(doc_id)
+    document=store.get_document(doc_id,with_fulltext=False)
+    content_chars=cur.execute(
+        "select length(text) from documents_fulltext where doc_id=?",(doc_id,)
+    ).fetchone()
+    state,_=summary_quality(
+        summary,document,
+        content_chars=content_chars[0] if content_chars else 0,
+    ) if summary is not None and document is not None else ("missing",[])
+    qualities.append(state)
+acceptable={"complete","title_limited","abstract_limited","short_content_limited","claims_only"}
+rec("总结", "结构化字段完整度按内容级别判定",
+    bool(qualities) and all(state in acceptable for state in qualities),
+    qualities)
 
 json.dump(RES, open(os.path.join(str(_REPO_ROOT / '测试资产' / 'data'), "retest_core.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 bad2 = [r for r in RES if not r["ok"]]

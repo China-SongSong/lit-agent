@@ -16,8 +16,13 @@ expect = "他说 " + Q + "括号{不是结构}" + Q + " 结束"
 print("期望:", expect)
 print("一致:", got == {"a": expect})
 
-# 另测：字符串内含未转义括号（合法 JSON）
+# 另测：字符串内含括号但引号正确转义（合法 JSON）
 raw2 = '{"a": "值 {含括号} 但不嵌套"}'
 print("\n输入:", raw2)
 print("输出:", extract_json(raw2))
 print("一致:", extract_json(raw2) == {"a": "值 {含括号} 但不嵌套"})
+
+# 内层引号未转义属于非法 JSON，解析器应明确返回 None，不能擅自修补结构。
+invalid = '{"a": "他说 "括号{不是结构}" 结束"}'
+print("\n非法输入:", invalid)
+print("拒绝非法 JSON:", extract_json(invalid) is None)

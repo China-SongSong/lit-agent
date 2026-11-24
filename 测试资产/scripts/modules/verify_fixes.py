@@ -16,7 +16,7 @@ s = get_settings()
 
 # 1) 基线哈希（新口径）
 from litagent.evaluation.corpus_build import logical_database_sha256, logical_database_table_sha256
-fx = json.load(open(os.path.join(SCR,"tests","fixtures","production_baseline_v1.json"), encoding="utf-8"))
+fx = json.load(open(os.path.join(SCR,"tests","fixtures","production_baseline_v3.json"), encoding="utf-8"))
 h = logical_database_sha256(s.db_path)
 tabs = logical_database_table_sha256(s.db_path)
 rec("基线哈希与清单一致", h == fx.get("logical_sha256"), "%s vs %s" % (h[:16], str(fx.get("logical_sha256"))[:16]))

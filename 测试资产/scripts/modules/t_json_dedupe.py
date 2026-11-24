@@ -15,12 +15,12 @@ def rec(no, name, ok, detail=""):
     RES.append(dict(no=no, name=name, ok=bool(ok), detail=str(detail)[:300]))
     print("%-6s #%-2s %-42s %s" % ("PASS" if ok else "FAIL", no, name, str(detail)[:100]))
 
-Q = chr(34); FENCE = chr(96)*3; NL = chr(10)
+Q = chr(34); BS = chr(92); FENCE = chr(96)*3; NL = chr(10)
 cases14 = [
  ("markdown 围栏", '前言 ' + FENCE + 'json' + NL + '{"a": 1}' + NL + FENCE + ' 后记', {"a":1}),
  ("前后废话", '好的，结果如下：{"a": 2} 希望有帮助', {"a":2}),
  ("嵌套括号", '{"a": {"b": [1,2,{"c":3}]}}', {"a":{"b":[1,2,{"c":3}]}}),
- ("字符串内含引号与括号", '{"a": "他说 ' + Q + '括号{不是结构}' + Q + ' 结束"}',
+ ("字符串内含转义引号与括号", '{"a": "他说 ' + BS + Q + '括号{不是结构}' + BS + Q + ' 结束"}',
                           {"a": "他说 " + Q + "括号{不是结构}" + Q + " 结束"}),
 ]
 for name, text, exp in cases14:

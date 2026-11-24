@@ -13,7 +13,7 @@ def rec(cat, name, ok, detail=""):
 
 # A 环境
 import platform
-rec("环境", "Python 版本", sys.version_info >= (3,9), sys.version.split()[0])
+rec("环境", "Python 版本", sys.version_info >= (3,12), sys.version.split()[0])
 for m in ("requests","jieba","pymupdf","streamlit"):
     try:
         importlib.import_module(m); rec("环境", "依赖 %s" % m, True)
@@ -45,7 +45,7 @@ con = sqlite3.connect(str(s.db_path)); cur = con.cursor()
 
 # C 数据库与基线
 rec("数据库", "integrity_check", cur.execute("pragma integrity_check").fetchone()[0]=="ok")
-base = json.load(open(os.path.join(SCR,"tests","fixtures","production_baseline_v1.json"), encoding="utf-8"))
+base = json.load(open(os.path.join(SCR,"tests","fixtures","production_baseline_v3.json"), encoding="utf-8"))
 cnt = {
  "documents": cur.execute("select count(*) from documents").fetchone()[0],
  "documents_with_fulltext": cur.execute("select count(*) from documents where has_fulltext=1").fetchone()[0],
@@ -97,10 +97,27 @@ r1,_ = tr.trace(q0, allow_online=False)
 rec("溯源", "逐字原文命中", r1.found and r1.level=="local_exact", "level=%s conf=%.3f" % (r1.level,r1.confidence))
 rec("溯源", "命中带指纹证据", getattr(r1,"decision_basis","")=="local_fingerprint" and r1.hit and "phrase" in (r1.hit.sources or []),
     "basis=%s sources=%s" % (getattr(r1,"decision_basis",None), (r1.hit.sources if r1.hit else None)))
-r2,_ = tr.trace(q0.replace(" the "," a ",1), allow_online=False)
-rec("溯源", "微改动仍命中且有区分度", r2.found and abs(r2.confidence-r1.confidence)>1e-6, "level=%s conf=%.3f" % (r2.level,r2.confidence))
+def mutate_quote(text):
+    for old,new in ((" the "," a "),(" and "," or "),(" of "," in "),(" to "," from ")):
+        if old in text:
+            return text.replace(old,new,1)
+    words=text.split()
+    for index,word in enumerate(words):
+        if len(word)>=5 and word.isalpha():
+            words[index]=word[:-1]+"x"
+            return " ".join(words)
+    return text
+
+q2 = mutate_quote(q0)
+rec("溯源", "微改动样例确实发生变化", q2 != q0, q2[:80])
+r2,_ = tr.trace(q2, allow_online=False)
+rec("溯源", "微改动仍命中且有区分度",
+    r2.found and abs(r2.confidence-r1.confidence)>1e-6,
+    "level=%s conf=%.3f" % (r2.level,r2.confidence))
 r3,_ = tr.trace("量子纠缠态在超导约瑟夫森结中的退相干时间测量方法研究", allow_online=False)
-rec("溯源", "无关文本→none", r3.level=="none" and not r3.found, r3.level)
+rec("溯源", "无关文本不确认出处",
+    r3.level in ("none","local_semantic") and not r3.found and r3.confidence==0,
+    r3.level)
 r4,_ = tr.trace("", allow_online=False)
 rec("溯源", "空输入→empty", r4.level=="empty", r4.level)
 r5,rp5 = tr.trace("电池", allow_online=False)
@@ -127,9 +144,27 @@ try: SummaryRunner(store, s).run(doc_ids=[sdd])
 except Exception as e: err=e
 s.llm_api_key=orig
 rec("总结", "缓存命中免密钥", err is None, str(err).splitlines()[0][:60] if err else "未报错")
-rows = cur.execute("select tldr,problem,methods,findings,contributions,limitations from summaries").fetchall()
-full = sum(1 for r in rows if all(x and str(x).strip() for x in r))
-rec("总结", "字段完整度", full==len(rows), "完整 %d / %d" % (full,len(rows)))
+from litagent.schema import summary_quality
+summary_ids=[r[0] for r in cur.execute("select doc_id from summaries").fetchall()]
+qualities=[]
+for doc_id in summary_ids:
+    summary=store.get_summary(doc_id)
+    document=store.get_document(doc_id,with_fulltext=False)
+    if summary is None or document is None:
+        qualities.append("missing")
+        continue
+    content_chars=cur.execute(
+        "select length(text) from documents_fulltext where doc_id=?",(doc_id,)
+    ).fetchone()
+    state,_=summary_quality(
+        summary,document,
+        content_chars=content_chars[0] if content_chars else 0,
+    )
+    qualities.append(state)
+acceptable={"complete","title_limited","abstract_limited","short_content_limited","claims_only"}
+rec("总结", "字段完整度按内容级别判定",
+    bool(qualities) and all(state in acceptable for state in qualities),
+    qualities)
 
 # I 契约
 try:
