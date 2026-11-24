@@ -21,6 +21,7 @@ from litagent.fetch.base import Source, register_source
 from litagent.schema import (  #导入文档模型，以及内容指纹、DOI 规范化、作者解析三个工具。
     Document,
     content_hash,
+    has_cjk,
     normalize_doi,
     parse_authors,
 )
@@ -43,6 +44,9 @@ SKIP_DIR_NAMES={  #开始定义要跳过的目录名集合。
 
 #注释：下面是用正则从 PDF 首页文本里抓 DOI 的表达式。
 _DOI_RE=re.compile(r"\b10\.\d{4,9}/[-._;()/:a-zA-Z0-9]+",re.I)  #预编译 DOI 正则：反斜杠 b 表示词边界，末尾的 re.I 表示忽略大小写。
+
+#注释：下面这些是 PDF 内嵌元数据里的占位符字面量，CNKI 导出时标题/作者字段会填成这些字，不是真实内容。
+_AUTHOR_PLACEHOLDERS=("作者","作者名","作者姓名","author","authors")  #作者字段的占位符集合，命中就说明元数据不可信。
 
 #注释：下面几个正则是用来解析 Word 文档 XML 的。
 _DOCX_PARA_RE=re.compile(r"</w:p>")  #段落结束标签的正则，用来把整篇 XML 按段落切开。
@@ -285,6 +289,48 @@ def extract_doi_from_text(text:Optional[str])->Optional[str]:  #定义从一段�
     return candidate
 
 
+def extract_authors_from_meta(meta:Dict[str,Any],first_page:Optional[str])->List[str]:
+    """从元数据里取作者；若为占位符，则退回从首页正文提取真实作者。
+
+    CNKI 导出的 PDF 内嵌元数据里 author 字段常是占位符「作者」，真实作者
+    印在首页标题之后、单位行（以括号开头）之前的那一行。
+    """
+    raw=(meta.get("author") or "").strip()  #取内嵌作者字段并去空白。
+    if raw and raw.lower() not in _AUTHOR_PLACEHOLDERS:  #作者字段非空且不是占位符，直接信任它。
+        return [a for a in re.split(r"[;,]| and ",raw) if a.strip()]
+    if not first_page:  #没有首页文本，就没有退路可走。
+        return []
+    return _extract_cnki_authors_from_page(first_page)
+
+
+def _extract_cnki_authors_from_page(text:str)->List[str]:
+    """从 CNKI 中文 PDF 首页正文里提取作者名单。
+
+    定位规则：逐行扫描，挑出符合「中文姓名（可选上标数字）用逗号/顿号分隔」
+    特征的那一行。作者行有两种形态——多数带单位上标数字（如 ``徐田圆1,蒋 俊1``），
+    少数不带（如 ``彭 博,卢景琦``），都要能识别。
+    """
+    lines=[ln.strip() for ln in text.split("\n")]  #按行切开并去首尾空白。
+    for i,line in enumerate(lines):
+        if not line or not has_cjk(line):  #作者行必然含中文。
+            continue
+        # 拆成片段，逐个验证是否为「中文姓名 + 可选数字」。
+        parts=[p.strip() for p in re.split(r"[,，、]", line) if p.strip()]
+        if len(parts)<2:  #单个片段的往往是标题或单位，作者行至少两位作者或姓名带单位上标。
+            continue
+        names:List[str]=[]
+        ok=True
+        for part in parts:
+            m=re.match(r"^([\u4e00-\u9fa5][\u4e00-\u9fa5·\s]{1,6}?)\s*(\d+)?$", part)
+            if not m or not m.group(1).strip():
+                ok=False
+                break
+            names.append(re.sub(r"[\s·]+","",m.group(1)))  #去掉姓名里的空格与间隔点。
+        if ok and names:
+            return names
+    return []
+
+
 @register_source  #注册装饰器：把这个类登记进数据源表，命令行就能按名字找到它。
 class LocalPdfSource(Source):
     """本地文献库扫描器。
@@ -393,8 +439,8 @@ class LocalPdfSource(Source):
 
         doi=extract_doi_from_text(first_page)  #从首页文本里抓 DOI，很多论文会把 DOI 印在首页。
         authors=parse_authors(
-            [a for a in re.split(r"[;,]| and ",meta.get("author") or "") if a.strip()]
-        )  #作者解析的调用到此结束。
+            extract_authors_from_meta(meta,first_page)
+        )  #作者解析：占位符时退回从首页正文提取真实作者。
 
         doc=Document(  #开始构造正常的 PDF 文档对象。
             id=Document.make_id("local",str(path),doi,title),  #用源名、路径、DOI 和标题算出稳定编号。

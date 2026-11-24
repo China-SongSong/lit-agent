@@ -13,7 +13,12 @@ from litagent.evaluation.corpus_build import (
     logical_database_sha256,
     logical_database_table_sha256,
 )
-from litagent.fetch.local_pdf import extract_doi_from_text, guess_title_from_filename
+from litagent.fetch.local_pdf import (
+    _extract_cnki_authors_from_page,
+    extract_authors_from_meta,
+    extract_doi_from_text,
+    guess_title_from_filename,
+)
 
 
 class ConfigurationBoundsTests(unittest.TestCase):
@@ -148,6 +153,43 @@ class CnkPdfMetadataRegressionTests(unittest.TestCase):
         self.assertEqual(
             guess_title_from_filename(path),
             "基于LIBS技术的银合金分类及定量分析研究",
+        )
+
+
+class CnkPdfAuthorRegressionTests(unittest.TestCase):
+    """Issue #6：CNKI 中文 PDF 作者字段为占位符「作者」，应退回从首页提取真实作者。"""
+
+    def test_author_placeholder_falls_back_to_first_page(self)->None:
+        # 内嵌 author 为占位符时，不能信任，应退回首页正文提取。
+        meta = {"author": "作者"}
+        first_page = (
+            "三维与准三维碳纤维增强轻质复合材料传热对比研究\n"
+            "徐田圆1,蒋 俊1,石友安2,李睿智2,卢忠远1,张魁宝1,李 军1\n"
+            "(1.西南科技大学环境友好能源材料国家重点实验室,绵阳621010;"
+        )
+        self.assertEqual(
+            extract_authors_from_meta(meta, first_page),
+            ["徐田圆", "蒋俊", "石友安", "李睿智", "卢忠远", "张魁宝", "李军"],
+        )
+
+    def test_author_line_without_superscript_digits(self)->None:
+        # 少数作者行不带单位上标数字（如「彭 博,卢景琦」），也必须能提取。
+        text = (
+            "基于LIBS技术的银合金分类及定量分析研究\n"
+            "彭 博,卢景琦\n"
+            "(武汉理工大学理学院,武汉430070)"
+        )
+        self.assertEqual(
+            _extract_cnki_authors_from_page(text),
+            ["彭博", "卢景琦"],
+        )
+
+    def test_normal_author_metadata_is_trusted(self)->None:
+        # 内嵌 author 正常时，直接信任，不做首页回退。
+        meta = {"author": "Thorsten Ries"}
+        self.assertEqual(
+            extract_authors_from_meta(meta, None),
+            ["Thorsten Ries"],
         )
 
 
