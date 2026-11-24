@@ -1,6 +1,7 @@
 # lit-agent 文献引文溯源系统
 
 [![CI](https://github.com/China-SongSong/lit-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/China-SongSong/lit-agent/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
 **一句话：在一万篇文献中核对一句话的出处，并拒绝把“相似”当成“来源”。**
 
