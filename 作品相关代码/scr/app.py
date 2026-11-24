@@ -726,7 +726,13 @@ def tab_docs()->None:
     st.header("📚 文献库")
     st.caption("库里全部文献都在这里。内容级别为「全文」的才能溯源到句子；"
                "「摘要」「仅标题」表示这篇没有下到开放获取全文。")
-    st.caption("数据库：%s"%settings.db_path)
+    try:
+        database_label=settings.db_path.resolve().relative_to(
+            settings.project_root.resolve()
+        )
+    except ValueError:
+        database_label=Path("data")/"index.db"
+    st.caption("数据库：%s"%database_label)
     _render_document_import()
 
     store=get_store()
@@ -765,7 +771,7 @@ def tab_docs()->None:
     col1.metric("库里共","%d 篇"%len(rows))
     col2.metric("可检索","%d 篇"%len(ready))
     col3.metric("未清洗","%d 篇"%len(pending))
-    fulltext_count=sum(1 for row in rows if row["ntext"]>0)
+    fulltext_count=sum(1 for row in rows if row["level"]=="全文")
     abstract_count=sum(1 for row in rows if row["level"] in("全文","摘要"))
     fulltext_rate=fulltext_count/len(rows) if rows else 0.0
     st.caption(
