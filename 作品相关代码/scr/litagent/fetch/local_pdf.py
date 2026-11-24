@@ -276,7 +276,13 @@ def extract_doi_from_text(text:Optional[str])->Optional[str]:  #定义从一段�
     match=_DOI_RE.search(text[:6000])  #只在前六千个字符里搜索，首页信息够用，而且更快。
     if not match:  #判断有没有匹配到 DOI。
         return None  #返回空值，表示这份文献没能读到 DOI。
-    return normalize_doi(match.group(0))  #取匹配到的整段文字做规范化，比如统一格式、去掉多余前缀。
+    candidate=normalize_doi(match.group(0))  #取匹配到的整段文字做规范化，比如统一格式、去掉多余前缀。
+    if not candidate:  #规范化后为空，说明不是有效 DOI。
+        return None
+    suffix=candidate.split("/",1)[1] if "/" in candidate else ""  #取 DOI 前缀 10.xxxx 之后的登记机构后缀部分。
+    if len(suffix)<4:  #后缀过短（如 CNKI 残留的 "j"），说明只是 DOI 前缀片段，不是完整 DOI。
+        return None  #判定为无效，避免把不完整片段误当 DOI 导致去重误杀。
+    return candidate
 
 
 @register_source  #注册装饰器：把这个类登记进数据源表，命令行就能按名字找到它。
@@ -382,7 +388,7 @@ class LocalPdfSource(Source):
             )  #这个最小文档构造结束。
 
         title=(meta.get("title") or "").strip()  #取内嵌标题并去掉空白，字段缺失时当作空串。
-        if not title or title.lower() in("untitled","microsoft word","document"):  #标题为空或是那几个默认垃圾值时，说明这份元数据不可信。
+        if not title or title.lower() in("untitled","microsoft word","document","标题","作者","无标题"):  #标题为空或是那几个默认垃圾值时，说明这份元数据不可信；中文的"标题""作者""无标题"是 CNKI 导出的占位符，同样要回退。
             title=guess_title_from_filename(path)  #改用文件名当标题。
 
         doi=extract_doi_from_text(first_page)  #从首页文本里抓 DOI，很多论文会把 DOI 印在首页。

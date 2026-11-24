@@ -13,6 +13,7 @@ from litagent.evaluation.corpus_build import (
     logical_database_sha256,
     logical_database_table_sha256,
 )
+from litagent.fetch.local_pdf import extract_doi_from_text, guess_title_from_filename
 
 
 class ConfigurationBoundsTests(unittest.TestCase):
@@ -122,6 +123,32 @@ class CorpusHashScopeTests(unittest.TestCase):
             finally:
                 conn.close()
             self.assertNotEqual(logical_database_sha256(database),before)
+
+
+class CnkPdfMetadataRegressionTests(unittest.TestCase):
+    """Issue #5：CNKI 中文 PDF 占位符元数据 + DOI 误抓导致去重误杀。"""
+
+    def test_doi_prefix_fragment_is_rejected(self)->None:
+        # CNKI 导出 PDF 首页常见的 DOI 前缀片段，后缀过短，必须判为无效。
+        self.assertIsNone(extract_doi_from_text("10.3963/j"))
+        self.assertIsNone(extract_doi_from_text("doi: 10.3963/j 中文摘要"))
+        # 完整 DOI 仍应正常提取。
+        self.assertEqual(
+            extract_doi_from_text("10.1007/s11214-021-00831-w"),
+            "10.1007/s11214-021-00831-w",
+        )
+
+    def test_doi_with_empty_or_punct_only_suffix_is_rejected(self)->None:
+        self.assertIsNone(extract_doi_from_text("10.3963/"))
+        self.assertIsNone(extract_doi_from_text("10.3963/j."))
+
+    def test_filename_fallback_for_cnki_placeholder_title(self)->None:
+        # 标题为中文占位符时，应回退到文件名。
+        path = Path("基于LIBS技术的银合金分类及定量分析研究.pdf")
+        self.assertEqual(
+            guess_title_from_filename(path),
+            "基于LIBS技术的银合金分类及定量分析研究",
+        )
 
 
 if __name__=="__main__":
