@@ -13,7 +13,7 @@ from litagent.evaluation.corpus_build import (
 )
 
 ROOT=Path(__file__).resolve().parents[1]
-BASELINE=Path(__file__).resolve().parent/"fixtures"/"production_baseline_v3.json"
+BASELINE=Path(__file__).resolve().parent/"fixtures"/"production_baseline_v4.json"
 
 
 def _sha256(path:Path)->str:

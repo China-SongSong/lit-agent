@@ -1,0 +1,25 @@
+{
+  "corpus_version": "production-v4",
+  "supersedes": "production_baseline_v3.json",
+  "database": "data/index.db",
+  "logical_sha256": "1d525761a159b93e3972d8ff91e5ab0e50e2ddc1c6364f2600ad3679d1f820fc",
+  "physical_sha256_observed": "ead2e62cbddad77865fce6e9c6e01b23ca4cea0de393f6b09fd9236a83fc5015",
+  "hash_policy": "语义语料哈希 v3：仅覆盖 documents 的语义字段与 documents_fulltext。排除抽取/清洗/总结时间、PDF 路径、分块和倒排索引、总结、缓存、元数据及学科标签。",
+  "table_sha256": {
+    "documents": "fd7aabc78b4177ec2cefabfd7d33384c40a9641e2c446bfd835ab8d54d188546",
+    "documents_fulltext": "a1e0a88ec1d8b93be593deb38eb7b410fccc3c6b93753b4dac1ad4584ce979db"
+  },
+  "queries": "production_queries_v1.jsonl",
+  "queries_sha256": "5bf8abc560af18f257325b93bc872c9ef88ee288339554e5b04194a9c7abfd4c",
+  "query_count": 9,
+  "frozen_on": "2026-11-24",
+  "counts": {
+    "documents": 8,
+    "documents_with_fulltext": 8,
+    "chunks": 291,
+    "postings": 28072,
+    "fingerprints": 72256,
+    "summaries": 0
+  },
+  "note": "v4 由 Issue #5（CNKI 中文 PDF 去重误杀）与 Issue #6（作者占位符）修复后重建的 8 篇库冻结（已剔除误入库的「人工智能设计大赛参赛指南」）。v1/v2/v3 保留为历史口径；后续语料变化必须生成新版本，不能覆盖本基线。"
+}
