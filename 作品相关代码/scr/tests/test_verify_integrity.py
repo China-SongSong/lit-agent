@@ -224,6 +224,13 @@ class PaperBriefStatusTests(unittest.TestCase):
         self.assertIn("主动提示已撤稿文献",AGENT_SYSTEM_TEMPLATE)
         self.assertIn("请勿作为有效依据引用",AGENT_SYSTEM_TEMPLATE)
 
+    def test_prompt_forbids_fabricating_retraction(self)->None:
+        """反向约束：工具返回 retracted=false 或缺字段时，禁止模型凭记忆臆造撤稿。"""
+        from litagent.agent.prompts import AGENT_SYSTEM_TEMPLATE
+
+        self.assertIn("绝不臆造撤稿状态",AGENT_SYSTEM_TEMPLATE)
+        self.assertIn("不能来自你的训练知识",AGENT_SYSTEM_TEMPLATE)
+
 
 if __name__=="__main__":
     unittest.main()
