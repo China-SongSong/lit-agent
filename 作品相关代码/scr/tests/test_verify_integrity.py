@@ -198,5 +198,32 @@ class VerifyCitationToolTests(unittest.TestCase):
         self.assertIn("error",result)
 
 
+class PaperBriefStatusTests(unittest.TestCase):
+    """_paper_brief 必须透出撤稿状态，让 Agent 能主动提示已撤稿文献。"""
+
+    def test_brief_exposes_retracted_and_status(self)->None:
+        from litagent.agent.tools import LiteratureTools
+
+        doc=Document(id="doi:x",title="测试文献",
+                     extra={"is_retracted":True,"status":"retracted"})
+        brief=LiteratureTools._paper_brief(doc)
+        self.assertTrue(brief.get("retracted"))
+        self.assertEqual(brief.get("status"),"retracted")
+
+    def test_brief_normal_doc_defaults(self)->None:
+        from litagent.agent.tools import LiteratureTools
+
+        doc=Document(id="doi:y",title="正常文献",extra={})
+        brief=LiteratureTools._paper_brief(doc)
+        self.assertFalse(brief.get("retracted"))
+        self.assertEqual(brief.get("status"),"active")
+
+    def test_prompt_requires_active_retraction_notice(self)->None:
+        from litagent.agent.prompts import AGENT_SYSTEM_TEMPLATE
+
+        self.assertIn("主动提示已撤稿文献",AGENT_SYSTEM_TEMPLATE)
+        self.assertIn("请勿作为有效依据引用",AGENT_SYSTEM_TEMPLATE)
+
+
 if __name__=="__main__":
     unittest.main()

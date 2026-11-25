@@ -170,6 +170,8 @@ class LiteratureTools:  #所有工具都挂在同一个类上
             "doi":doc.doi,
             "discipline_tags":list(doc.discipline_tags),
             "has_fulltext":bool((doc.extra or{}).get("chunk_count")),  #有没有全文由片段数派生
+            "retracted":bool(getattr(doc,"retracted",False)),  #是否已撤稿（只读派生，来自 extra）
+            "status":str(getattr(doc,"status","active") or "active"),  #文献状态：active/retracted/preprint/erratum
         }
         if score is not None:
             item["score"]=round(float(score),4)
