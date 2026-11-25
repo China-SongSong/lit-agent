@@ -12,6 +12,7 @@ from typing import Any, Dict, Iterable, List, Optional
 from litagent.fetch.base import Source, register_source
 from litagent.schema import (  #从 schema 导入文献模型、DOI 归一化函数与作者解析函数。
     Document,
+    derive_document_status,
     normalize_doi,
     parse_authors,
 )
@@ -109,6 +110,36 @@ def _date_parts_to_year(*candidates:Any)->Optional[int]:
     return None  #所有候选都没给出合法年份时返回 None，让上层字段留空。
 
 
+def _detect_retraction(item:Dict[str,Any])->tuple[bool,Optional[str]]:
+    """检测一条 Crossref 记录是否被撤稿，返回 (是否撤稿, 撤稿说明)。
+
+    Crossref 是 DOI 注册机构，撤稿信息最权威。撤稿信号有三处，命中任一处即判撤稿：
+    1. ``assertion`` 数组里出现 retraction/retracted 字样；
+    2. ``update-to`` 数组里出现 retraction 类型的更新；
+    3. ``relation`` 字典里出现 has-retraction / has-retracted-article。
+    """
+    for assertion in item.get("assertion") or[]:
+        if not isinstance(assertion,dict):
+            continue
+        blob=" ".join(
+            str(assertion.get(k) or "") for k in("name","value","label")
+        ).lower()
+        if "retract" in blob:
+            note=assertion.get("label") or assertion.get("value") or "Retraction"
+            return True,str(note)
+    for upd in item.get("update-to") or[]:
+        if not isinstance(upd,dict):
+            continue
+        if "retract" in str(upd.get("type") or "").lower():
+            return True,str(upd.get("label") or "Retraction (update-to)")
+    relation=item.get("relation") or{}
+    if isinstance(relation,dict):
+        for key in("has-retraction","has-retracted-article","has-retraction-event"):
+            if relation.get(key):
+                return True,"Retraction (relation)"
+    return False,None
+
+
 @register_source  #装饰器：把这个类注册进数据源表，命令行按名字就能找到它。A
 class CrossrefSource(Source):  #定义 Crossref 数据源类，继承基类以获得限流、缓存与重试能力。
     """Crossref REST API 客户端。"""
@@ -175,6 +206,8 @@ class CrossrefSource(Source):  #定义 Crossref 数据源类，继承基类以�
             item.get("published-online"),item.get("created"),  #候选三与候选四：网络出版日期，以及记录创建日期作最后兜底。
         )
 
+        retracted,retraction_note=_detect_retraction(item)  #检测撤稿：Crossref 是撤稿信息最权威的 DOI 注册源。
+
         doc=Document(  #开始构造 Document 对象，把清洗好的字段一个个塞进去。
             id=Document.make_id("crossref",None,doi,title),  #生成稳定 ID：优先用 DOI，没有才退回标题哈希；第二个参数表示没有源内编号。
             doi=doi,  #写入归一化后的 DOI，跨数据源合并就靠它。
@@ -199,6 +232,9 @@ class CrossrefSource(Source):  #定义 Crossref 数据源类，继承基类以�
             citation_count=item.get("is-referenced-by-count"),  #被引次数直接取 Crossref 的计数字段。
             extra={  #开始写附加信息字典，存放不进入标准字段的原始数据。
                 "type":item.get("type"),  #保留 Crossref 原始类型字符串，方便排查映射是否合理。
+                "is_retracted":retracted,  #撤稿标记：与 OpenAlex 同键，Document.retracted 从它派生。
+                "status":derive_document_status(retracted,item.get("type")),  #状态：retracted/preprint/erratum/active。
+                "retraction_note":retraction_note,  #撤稿说明，未撤稿时为 None。
                 "issn":item.get("ISSN") or[],  #保留期刊的国际标准刊号列表，缺失时给空列表。
                 "isbn":_first(item.get("ISBN")),  #书的国际标准书号取第一个，因为有些记录给多个版本。
                 "reference_count":item.get("reference-count"),  #保留参考文献条数，可用于判断文献的综述性质。

@@ -251,6 +251,61 @@ def render_paper_card(item:Dict[str,Any],index:Optional[int]=None,
             st.text_area("GB/T 7714-2015 引用",item["citation"],height=80,
                          key="cite_%s_%s"%(tag,index))
 
+#核验结论 → 徽章文案（verdict 来自核验引擎，unverified 表示未完成核验）
+_VERDICT_BADGE={
+    "retracted":"🔴 已撤稿",
+    "verified":"🟢 已核验",
+    "uncertain":"⚪ 无法确认",
+    "not_found":"⚪ 查无此文",
+    "suspicious":"⚠️ 疑似伪造",
+    "unverified":"⚪ 未核验",
+}
+
+
+def _render_online_candidates(candidates:list)->None:
+    """渲染「本轮联网候选」结构化区块，含真实性核验徽章。
+
+    数据来源是 AgentResult.online_candidates（fetch_online 的结构化透传），
+    而非 answer 自由文本。每条候选一张小卡片，标题旁按 verification.verdict
+    渲染徽章，可点开 evidence 的 URL 复核。
+    """
+    st.divider()
+    st.subheader("本轮联网候选（含真实性核验）")
+    st.caption("以下文献由联网检索得到，尚未写入本地库；核验结论由代码计算，可点开证据链接复核。")
+    for cand in candidates:
+        if not isinstance(cand,dict):
+            continue
+        verification=cand.get("verification") or {}
+        verdict=verification.get("verdict") or "unverified"
+        badge=_VERDICT_BADGE.get(verdict,"⚪ 未核验")
+        title=cand.get("title") or "（无标题）"
+        with st.container(border=True):
+            st.markdown("**%s**　%s"%(title,badge))
+            meta_parts=[]
+            authors=cand.get("authors")
+            if isinstance(authors,list) and authors:
+                meta_parts.append("、".join(str(a) for a in authors[:3]))
+            if cand.get("year"):
+                meta_parts.append(str(cand["year"]))
+            if cand.get("venue"):
+                meta_parts.append(str(cand["venue"]))
+            if meta_parts:
+                st.caption(" · ".join(meta_parts))
+            note=verification.get("note")
+            if note:
+                st.caption("核验说明：%s"%note)
+            evidence=verification.get("evidence") or []
+            if evidence:
+                with st.expander("核验证据（%d 条）"%len(evidence)):
+                    for e in evidence:
+                        if not isinstance(e,dict):
+                            continue
+                        line="**%s**：%s"%(e.get("source",""),e.get("claim",""))
+                        if e.get("url"):
+                            line+=" — [查看](%s)"%e["url"]
+                        st.markdown("- "+line)
+
+
 #页签 1：与 Agent 对话
 def tab_chat()->None:
     st.header("💬 与 Agent 对话")
@@ -338,6 +393,9 @@ def tab_chat()->None:
                 state="complete",expanded=False,
             )
             st.markdown(result.answer)
+            # 渲染「本轮联网候选」结构化区块（含真实性核验徽章）
+            if getattr(result,"online_candidates",None):
+                _render_online_candidates(result.online_candidates)
             get_store().record_query_history(
                 "agent",question,
                 found=result.stopped_reason=="final_answer",

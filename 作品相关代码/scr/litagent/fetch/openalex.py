@@ -19,6 +19,7 @@ from litagent.fetch.base import (  #'Source'是抽象基类，'register_source'�
 )
 from litagent.schema import (  #'normalize_doi'负责把DOI各种写法归一化，'parse_authors'负责拆作者串
     Document,
+    derive_document_status,
     normalize_doi,
     parse_authors,
 )
@@ -312,7 +313,8 @@ class OpenAlexSource(Source):
                 "oa_status":open_access.get("oa_status"),  #'oa_status'区分金色、绿色、青铜等开放获取形态
                 "oa_url":open_access.get("oa_url"),  #'oa_url'是OA全文地址，但经常指向落地页HTML而不是PDF直链
                 "pdf_url":best_oa.get("pdf_url") or primary.get("pdf_url"),  #'pdf_url'优先取最佳OA位置的，没有再退到主位置
-                "is_retracted":work.get("is_retracted"),  #'is_retracted'是撤稿标记，会影响文献能不能被引用
+                "is_retracted":bool(work.get("is_retracted")),  #'is_retracted'是撤稿标记，用bool包裹确保非None
+                "status":derive_document_status(bool(work.get("is_retracted")),work.get("type")),  #状态：retracted/preprint/erratum/active
                 "referenced_works":[
                     cls._short_id(r) for r in(work.get("referenced_works") or[])  #引用关系逐条压成短ID，方便本地建引用网络
                 ][:200],  #截前200条：一篇论文可能引上千篇，全存进'extra'会让索引文件膨胀好几倍

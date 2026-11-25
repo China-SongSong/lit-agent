@@ -394,6 +394,45 @@ class LiteratureTools:  #所有工具都挂在同一个类上
                      "`cli.py fetch` 扩充。"),
         }
 
+    #文献真实性核验
+    def verify_citation(self,doc_id:Optional[str]=None,title:Optional[str]=None,
+                        authors:Optional[str]=None,year:Optional[str]=None,
+                        doi:Optional[str]=None)->Dict[str,Any]:
+        """核验一篇文献的真实性与撤稿状态，返回带出处的证据。
+
+        结论由确定性代码计算（Verifier），本工具只回传 verdict + evidence。
+        大模型只能复述这些字段，不得自行判断。
+        """
+        from litagent.schema import Document, normalize_doi, parse_authors
+        from litagent.verify import Verifier
+
+        doc=None
+        if doc_id:
+            doc=self.store.get_document(doc_id,with_fulltext=False)  #先按库内 ID 取
+        if doc is None:
+            if not (title or "").strip():  #没有标题就无从核验
+                return{"error":"缺少可核验的信息：请提供 doc_id 或 title。"}
+            doc=Document(  #用题录临时构造一个 Document 交给核验器
+                id=Document.make_id("verify",None,doi,(title or "").strip()),
+                title=(title or "").strip(),
+                authors=parse_authors([authors] if authors else[]),
+                year=int(year) if str(year or "").strip().isdigit() else None,
+                doi=normalize_doi(doi),
+            )
+        if doc is None or not (doc.title or "").strip():
+            return{"error":"缺少可核验的信息：请提供 doc_id 或 title。"}
+
+        try:
+            result=Verifier(self.settings).verify(doc)  #核验逻辑全在 Verifier 里
+        except Exception as exc:  # noqa: BLE001
+            return{"error":"核验失败：%s: %s"%(type(exc).__name__,str(exc)[:160])}
+
+        payload=result.to_compact_dict()  #体积受控，避免撞上 observation 截断
+        payload["title"]=doc.title
+        payload["doi"]=doc.doi
+        payload["doc_id"]=doc.id
+        return payload
+
     #联网抓取
     DOWNLOAD_BUDGET=90.0  #补下全文的时间预算（秒）：死链拖时间时到点收手，剩下的留到下次
 
@@ -411,11 +450,41 @@ class LiteratureTools:  #所有工具都挂在同一个类上
                 finally:
                     source_obj.close()
                 papers=[]
-                for doc in documents:
+                # 自动核验：只对前 5 篇做，并行、每篇单篇上限 8 秒。核验结果内嵌进每篇的 verification 字段。
+                _VERIFY_MAX=5
+                _VERIFY_PER_BUDGET=8.0
+                verify_results={}
+                if documents:
+                    try:
+                        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+                        from litagent.verify import Verifier
+
+                        verifier=Verifier(self.settings)
+                        n_verify=min(_VERIFY_MAX,len(documents))
+                        with ThreadPoolExecutor(max_workers=n_verify) as pool:
+                            futures={
+                                pool.submit(verifier.verify,documents[i],budget_seconds=_VERIFY_PER_BUDGET):i
+                                for i in range(n_verify)
+                            }
+                            for future in as_completed(futures):
+                                idx=futures[future]
+                                try:
+                                    verify_results[idx]=future.result().to_compact_dict()
+                                except Exception:
+                                    verify_results[idx]={
+                                        "verdict":"unverified","verdict_label":"未核验",
+                                        "confidence":0.0,"note":"核验失败或超时","evidence":[],
+                                    }
+                    except Exception:
+                        verify_results={}  #核验整体失败不影响预览
+                for idx,doc in enumerate(documents):
                     item=self._paper_brief(doc)
                     item["url"]=doc.url
                     item["is_oa"]=bool(doc.is_oa)
                     item["citation"]=self._citation(doc)
+                    if idx in verify_results:
+                        item["verification"]=verify_results[idx]  #检索后自动附带的真实性核验结论
                     papers.append(item)
                 return{
                     "query":query,
@@ -592,6 +661,25 @@ class LiteratureTools:  #所有工具都挂在同一个类上
                          "覆盖哪些年份。当用户问「你这里有什么」或检索结果为空需要解释原因时用。"),
             parameters=_object({}),  #不需要任何参数，空对象即可
             handler=self.corpus_stats,
+        ))
+
+        #文献真实性核验
+        registry.register(Tool(
+            name="verify_citation",
+            description=("【核验】核验一篇文献的真实性与撤稿状态。"
+                         "当用户问「这篇文献是真的吗」「是否被撤稿」「这条参考文献靠不靠谱」时用这个。"
+                         "**核验结论只能来自本工具返回的 verdict 与 evidence 字段**："
+                         "evidence 里没有标记撤稿，就绝不能说「已撤稿」；"
+                         "返回「无法确认」时如实说明「这几个库未收录、无法确认」，"
+                         "绝不能替用户下「伪造」的结论。"),
+            parameters=_object({
+                "doc_id":_string("库内文献 ID（形如 doi:10.1145/xxxx 或 openalex:W123）",None),
+                "title":_string("文献标题（doc_id 为空时必填）",None),
+                "authors":_string("作者，逗号分隔",None),
+                "year":_string("出版年份",None),
+                "doi":_string("DOI",None),
+            },[]),  #doc_id 与 title 二选一，故不设 required
+            handler=self.verify_citation,
         ))
 
         #联网扩充语料

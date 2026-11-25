@@ -192,6 +192,24 @@ def title_similarity(a:Optional[str],b:Optional[str])->float:
     return len(ga&gb)/float(len(ga|gb))
 
 
+def derive_document_status(retracted:bool,raw_type:Optional[str]="")->str:
+    """根据撤稿标记与数据源原始类型推导文献状态。
+
+    返回值约定与 ``Document.status`` 属性一致：retracted / preprint / erratum / active。
+    原始类型来自数据源（Crossref 的 ``type`` 或 OpenAlex 的 ``type``），因为
+    ``erratum`` 与 ``preprint`` 在映射到 venue_type 后会丢失原始语义，必须在这里
+    用原始类型词判断。
+    """
+    if retracted:
+        return "retracted"
+    t=(raw_type or "").lower()
+    if t in("posted-content","preprint"):
+        return "preprint"
+    if t=="erratum" or "erratum" in t:
+        return "erratum"
+    return "active"
+
+
 @dataclass
 class Author:
     """单个著者：'family'为姓，'given'为名，'raw'保留原始串兜底"""
@@ -487,6 +505,16 @@ class Document:
         """是否是一篇没有实际内容的占位文档"""
         return not(self.title or "").strip()  #只有标题为空才算空
 
+    @property
+    def retracted(self)->bool:
+        """是否已撤稿：只读派生，从 extra["is_retracted"] 读取，不落库、不进 to_dict。"""
+        return bool((self.extra or {}).get("is_retracted"))
+
+    @property
+    def status(self)->str:
+        """文献状态：只读派生，从 extra["status"] 读取，默认 active。"""
+        return str((self.extra or {}).get("status") or "active")
+
 @dataclass  #片段与Document是一对多，共用id前缀
 class Chunk:
     """文献正文的一个片段，是检索的最小单位"""
@@ -729,4 +757,5 @@ __all__=[
     "title_similarity",
     "content_hash",
     "parse_authors",
+    "derive_document_status",
 ]

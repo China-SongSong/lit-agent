@@ -56,6 +56,7 @@ class AgentResult:
     elapsed_seconds:float=0.0
     prompt_tokens:int=0
     completion_tokens:int=0
+    online_candidates:List[Dict[str,Any]]=field(default_factory=list)  #本轮联网检索的候选（含真实性核验结果），供界面渲染结构化区块
 
     @property
     def ok(self)->bool:
@@ -228,6 +229,15 @@ class LiteratureAgent:
             step.observation=observation  #记下观察结果
             if isinstance(output,dict) and output.get("error"):  #工具自己报的错也记进这一步
                 step.error=str(output["error"])[:200]
+
+            #联网检索候选结构化透传：界面据此渲染「本轮联网候选」区块（含真实性核验徽章）
+            if tool_name=="fetch_online" and isinstance(output,dict):
+                papers=output.get("papers")
+                if isinstance(papers,list) and papers:
+                    result.online_candidates=[
+                        {k:p.get(k) for k in("title","authors","year","venue","doi","url","verification","citation") if k in p}
+                        for p in papers if isinstance(p,dict)
+                    ]
 
             result.steps.append(step)  #收进结果
             if on_step:
